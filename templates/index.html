@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>ComfeSocial</title>
+    <!-- Vincular el CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Favicon opcional -->
+    <link rel="icon" href="{{ url_for('static', filename='logocomfesocial.png') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Logo -->
+        <img src="{{ url_for('static', filename='logocomfesocial.png') }}" 
+             alt="Logo ComfeSocial" width="150">
+
+        <!-- Título -->
+        <h1>Bienvenido a ComfeSocial</h1>
+        <p>Tu red social para compartir y conectar.</p>
+
+        <!-- Botones principales -->
+        <div>
+            <a href="{{ url_for('login') }}">
+                <button>Iniciar Sesión</button>
+            </a>
+            <a href="{{ url_for('registro') }}">
+                <button>Registrarse</button>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

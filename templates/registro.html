@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ComfeSocial - Registro</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="logo">ComfeSocial</div>
+        <div class="nav-links">
+            <a href="/">Iniciar sesión</a>
+            <a href="/registro">Registrar</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Crear cuenta en ComfeSocial</h1>
+        <form action="/registro" method="post">
+            <input type="tel" name="telefono" placeholder="Teléfono" required>
+            <input type="text" name="usuario" placeholder="Usuario (@nombre)" required>
+            <input type="password" name="password" placeholder="Contraseña" required>
+            <button type="submit">Registrar</button>
+        </form>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul class="messages">
+              {% for msg in messages %}
+                <li>{{ msg }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>

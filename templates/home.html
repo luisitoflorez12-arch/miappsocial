@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ComfeSocial - Home</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="logo">ComfeSocial</div>
+        <div class="nav-links">
+            <span>Usuario: {{ usuario.usuario }}</span>
+            <a href="/logout">Cerrar sesión</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Bienvenido {{ usuario.usuario }}</h1>
+
+        <h2>Publicar comentario:</h2>
+        <form action="/add/{{ user_id }}" method="post">
+            <input type="text" name="comentario" placeholder="¿Qué estás pensando?" required>
+            <button type="submit">Publicar</button>
+        </form>
+
+        <h2>Comentarios:</h2>
+        <div class="comments">
+            <ul>
+                {% for post in posts %}
+                <li>
+                    <strong>{{ post.autor }}</strong>: {{ post.texto }}
+                    <a href="/like/{{ loop.index0 }}/{{ user_id }}">👍 {{ post.likes }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,97 @@
+/* ====== Barra superior ====== */
+header {
+    background-color: #3b5998;
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between; /* logo a la izquierda, links a la derecha */
+    align-items: center;
+}
+
+header .logo {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+header .nav-links {
+    display: flex;
+    gap: 15px;
+}
+
+header .nav-links a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+header .nav-links a:hover {
+    text-decoration: underline;
+}
+
+/* ====== Contenedor principal ====== */
+.container {
+    width: 600px;
+    margin: 40px auto;
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
+}
+
+h1, h2 {
+    color: #3b5998;
+    text-align: center;
+}
+
+/* ====== Formularios ====== */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+form input[type="text"],
+form input[type="password"],
+form input[type="tel"] {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+form button {
+    background-color: #3b5998;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+}
+form button:hover {
+    background-color: #2d4373;
+}
+
+/* ====== Comentarios ====== */
+.comments ul {
+    list-style: none;
+    padding: 0;
+}
+.comments li {
+    background: #f7f7f7;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+.comments li strong {
+    color: #3b5998;
+}
+.comments li a {
+    text-decoration: none;
+    color: #3b5998;
+    font-weight: bold;
+    margin-left: 10px;
+}
+.comments li a:hover {
+    color: #2d4373;
+}
