@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Perfil - {{ usuario.usuario }}</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style_new.css') }}">
+</head>
+<body>
+    <div style="padding-top: 2rem; padding-bottom: 2rem;">
+        <div class="container" style="max-width: 450px;">
+            <div class="form-container">
+                <div class="form-header">
+                    <h2>✏️ Editar Perfil</h2>
+                    <p>Usuario: <strong>{{ usuario.usuario }}</strong></p>
+                </div>
+
+                <!-- Mostrar mensajes -->
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-info">
+                                {{ message }}
+                                <button type="button" onclick="this.parentElement.style.display='none';" style="background: none; border: none; float: right; cursor: pointer; font-size: 1.2rem;">×</button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST">
+                    <!-- Nombre -->
+                    <div class="form-group">
+                        <label for="nombre" class="form-label">Nombre Completo</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" 
+                               value="{{ usuario.nombre or '' }}" placeholder="Tu nombre completo">
+                    </div>
+
+                    <!-- Biografía -->
+                    <div class="form-group">
+                        <label for="bio" class="form-label">Biografía</label>
+                        <textarea class="form-control" id="bio" name="bio" rows="4" 
+                                  placeholder="Cuéntanos algo sobre ti...">{{ usuario.bio or '' }}</textarea>
+                    </div>
+
+                    <!-- Foto de Perfil (URL) -->
+                    <div class="form-group">
+                        <label for="foto" class="form-label">URL de Foto de Perfil</label>
+                        <input type="url" class="form-control" id="foto" name="foto" 
+                               value="{{ usuario.foto or '' }}" placeholder="https://ejemplo.com/tu-foto.jpg">
+                        {% if usuario.foto %}
+                            <small class="text-muted">Foto actual:</small>
+                            <img src="{{ usuario.foto }}" class="preview-pic" alt="Foto de perfil">
+                        {% endif %}
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="btn-container">
+                        <button type="submit" class="btn btn-primary">
+                            💾 Guardar Cambios
+                        </button>
+                        <a href="{{ url_for('perfil', user_id=usuario.id, current_user_id=usuario.id) }}" class="btn btn-secondary">
+                            ❌ Cancelar
+                        </a>
+                    </div>
+                </form>
+
+                <hr style="margin: 2rem 0; border: none; border-top: 1px solid #ddd;">
+
+                <!-- Info adicional -->
+                <div class="alert alert-info">
+                    <strong>ℹ️ Información:</strong><br>
+                    • Puedes dejar campos vacíos si no deseas cambiarlos<br>
+                    • Para la foto, usa una URL de imagen directa<br>
+                    • Los cambios se guardarán inmediatamente
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -2,56 +2,60 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ComfeSocial - Login</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ComfeSocial - Iniciar Sesión</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style_new.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='logocomfesocial.png') }}">
 </head>
 <body>
-    <!-- Barra superior -->
-    <header class="navbar">
-        <div class="logo">
-            <img src="{{ url_for('static', filename='logocomfesocial.png') }}" alt="Logo ComfeSocial" width="40">
-            <span>ComfeSocial</span>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <span class="logo-mark" aria-hidden="true">C</span>
+                <span>ComfeSocial</span>
+            </div>
+            <nav class="nav-links">
+                <a href="{{ url_for('index') }}">Inicio</a>
+                <a href="{{ url_for('registro') }}" class="btn-outline-light">Registrarse</a>
+            </nav>
         </div>
-        <nav class="nav-links">
-            <a href="{{ url_for('index') }}">Inicio</a>
-            <a href="{{ url_for('registro') }}">Registrarse</a>
-        </nav>
     </header>
 
-    <!-- Contenedor principal -->
-    <main class="container">
-        <section class="login-box">
-            <h1>Iniciar sesión</h1>
-            <p class="subtitle">Accede a tu cuenta para continuar</p>
+    <main class="container py-5">
+        <div class="form-container">
+            <div class="form-header">
+                <h1>Iniciar Sesión</h1>
+                <p>Accede a tu cuenta para continuar</p>
+            </div>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for msg in messages %}
+                        <div class="alert alert-danger">{{ msg }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
             <form method="POST" action="/login" class="form">
                 <div class="form-group">
-                    <label for="usuario">Usuario (@nombre):</label>
-                    <input type="text" id="usuario" name="usuario" placeholder="@usuario" required>
+                    <label class="form-label" for="usuario">Usuario (@nombre):</label>
+                    <input type="text" id="usuario" name="usuario" class="form-control" placeholder="Ejemplo: @juan" required autofocus>
                 </div>
 
                 <div class="form-group">
-                    <label for="password">Contraseña:</label>
-                    <input type="password" id="password" name="password" placeholder="Contraseña" required>
+                    <label class="form-label" for="password">Contraseña:</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Tu contraseña segura" required>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Entrar</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;">
+                    Entrar a ComfeSocial
+                </button>
             </form>
 
-            <p class="register-link">¿No tienes cuenta? <a href="{{ url_for('registro') }}">Regístrate aquí</a></p>
-
-            <!-- Mensajes flash -->
-            {% with messages = get_flashed_messages() %}
-              {% if messages %}
-                <ul class="messages">
-                  {% for msg in messages %}
-                    <li>{{ msg }}</li>
-                  {% endfor %}
-                </ul>
-              {% endif %}
-            {% endwith %}
-        </section>
+            <div class="register-link">
+                ¿No tienes cuenta? <a href="{{ url_for('registro') }}">Regístrate ahora</a>
+            </div>
+        </div>
     </main>
 
     <footer>

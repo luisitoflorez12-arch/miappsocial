@@ -1,23 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Chat con {{ receptor.usuario }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - {{ emisor.usuario }} & {{ receptor.usuario }}</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style_new.css') }}">
 </head>
-<body class="bg-light">
-<div class="container mt-4">
-    <h3>Chat entre {{ emisor.usuario }} y {{ receptor.usuario }}</h3>
-    <div class="border p-3 mb-3" style="height:300px; overflow-y:scroll;">
-        {% for m in mensajes %}
-            <p><strong>{{ m.emisor.usuario }}:</strong> {{ m.contenido }}</p>
-        {% endfor %}
-    </div>
-    <form method="POST">
-        <div class="input-group">
-            <input type="text" name="mensaje" class="form-control" placeholder="Escribe tu mensaje...">
-            <button class="btn btn-primary">Enviar</button>
+<body>
+    <div class="chat-page">
+        <div class="container chat-page-container">
+            <div class="chat-container">
+                <!-- Encabezado del chat -->
+                <div class="chat-header">
+                    <a href="{{ url_for('perfil', user_id=receptor.id, current_user_id=emisor.id) }}" class="back-link" style="color: white; text-decoration: none;">
+                        ← Volver al perfil
+                    </a>
+                    <h4>💬 Chat con {{ receptor.usuario }}</h4>
+                    <small>📱 {{ receptor.telefono }}</small>
+                </div>
+
+                <!-- Área de mensajes -->
+                <div class="chat-messages" id="mensajesArea">
+                    {% if mensajes %}
+                        {% for m in mensajes %}
+                            <div class="message {% if m.emisor_id == emisor.id %}sent{% else %}received{% endif %}">
+                                <div>
+                                    <small class="text-muted" style="display: block; margin-bottom: 0.5rem;">
+                                        <strong>{{ m.emisor.usuario }}</strong>
+                                    </small>
+                                    <div class="bubble">
+                                        {% if m.imagen %}
+                                            <img class="message-image" src="{{ url_for('static', filename=m.imagen) }}" alt="Imagen enviada">
+                                        {% endif %}
+                                        {% if m.contenido %}
+                                            <span class="message-text">{{ m.contenido }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div style="text-align: center; color: #999; padding: 2rem; padding-top: 3rem;">
+                            <p>✨ Aún no hay mensajes. ¡Comienza una conversación!</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Área de entrada de mensajes -->
+                <div class="chat-input-area">
+                    <form method="POST" enctype="multipart/form-data" class="chat-form">
+                        <div class="input-group">
+                            <label class="chat-image-button" for="imagen-chat" title="Adjuntar imagen">📷</label>
+                            <input type="file" id="imagen-chat" name="imagen" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+                            <input type="text" name="mensaje" class="form-control" placeholder="Escribe tu mensaje...">
+                            <button class="btn btn-primary" type="submit">
+                                📤 Enviar
+                            </button>
+                        </div>
+                        <small id="selected-image" class="selected-image">Puedes enviar texto, una imagen o ambos.</small>
+                    </form>
+                </div>
+            </div>
         </div>
-    </form>
-</div>
+    </div>
+
+    <script>
+        // Scroll automático al último mensaje
+        setTimeout(function() {
+            const area = document.getElementById('mensajesArea');
+            area.scrollTop = area.scrollHeight;
+        }, 100);
+
+        document.getElementById('imagen-chat').addEventListener('change', function() {
+            const selectedImage = document.getElementById('selected-image');
+            selectedImage.textContent = this.files.length
+                ? `Imagen seleccionada: ${this.files[0].name}`
+                : 'Puedes enviar texto, una imagen o ambos.';
+        });
+    </script>
 </body>
 </html>

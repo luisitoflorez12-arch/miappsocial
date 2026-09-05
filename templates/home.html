@@ -1,38 +1,181 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ComfeSocial - Home</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style_new.css') }}">
 </head>
 <body>
+    <a class="messages-fab" href="{{ url_for('mensajes', user_id=user_id) }}" aria-label="Abrir mensajes">
+        <span class="messages-fab-icon">💬</span>
+        {% if unread_count %}
+            <span class="messages-badge">{{ unread_count }}</span>
+        {% endif %}
+    </a>
     <header>
-        <div class="logo">ComfeSocial</div>
-        <div class="nav-links">
-            <span>Usuario: {{ usuario.usuario }}</span>
-            <a href="/logout">Cerrar sesión</a>
+        <div class="container">
+            <div class="logo">
+                <span class="logo-mark" aria-hidden="true">C</span>
+                <span>ComfeSocial</span>
+            </div>
+            <div class="header-actions">
+                <div class="header-search">
+                    <input type="search" id="searchInput" class="form-control" placeholder="Buscar usuarios..." autocomplete="off" aria-label="Buscar usuarios">
+                    <button type="button" class="btn btn-light" onclick="buscarUsuarios()">Buscar</button>
+                    <div id="searchResults" class="search-results"></div>
+                </div>
+                <a href="{{ url_for('perfil', user_id=usuario.id, current_user_id=usuario.id) }}" class="btn btn-light">
+                    👤 {{ usuario.usuario }}
+                </a>
+                <a href="/logout" class="btn btn-outline-light">Cerrar sesión</a>
+            </div>
         </div>
     </header>
 
-    <div class="container">
-        <h1>Bienvenido {{ usuario.usuario }}</h1>
-
-        <h2>Publicar comentario:</h2>
-        <form action="/add/{{ user_id }}" method="post">
-            <input type="text" name="comentario" placeholder="¿Qué estás pensando?" required>
-            <button type="submit">Publicar</button>
-        </form>
-
-        <h2>Comentarios:</h2>
-        <div class="comments">
-            <ul>
-                {% for post in posts %}
-                <li>
-                    <strong>{{ post.autor }}</strong>: {{ post.texto }}
-                    <a href="/like/{{ loop.index0 }}/{{ user_id }}">👍 {{ post.likes }}</a>
-                </li>
+    <div class="container" style="padding-top: 2rem; padding-bottom: 2rem;">
+        <!-- Mostrar mensajes de flash -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible">
+                        {{ message }}
+                        <button type="button" onclick="this.parentElement.style.display='none';" style="background: none; border: none; float: right; cursor: pointer; font-size: 1.2rem;">×</button>
+                    </div>
                 {% endfor %}
-            </ul>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formulario para publicar -->
+        <div class="post-card">
+            <div class="card-body">
+                <h5 class="card-title">✍️ ¿Qué estás pensando, {{ usuario.usuario }}?</h5>
+                <form action="/add/{{ user_id }}" method="post" enctype="multipart/form-data">
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <textarea name="comentario" class="form-control" placeholder="Comparte tu pensamiento..." rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label for="imagen" class="file-label">
+                            🖼️ Agregar imagen (opcional)
+                        </label>
+                        <input type="file" id="imagen" name="imagen" accept="image/*" style="display: none;">
+                        <small class="text-muted">PNG, JPG, JPEG, GIF (máx. 16MB)</small>
+                        <div id="preview-container" style="margin-top: 1rem; display: none;">
+                            <img id="preview" src="" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        📤 Publicar
+                    </button>
+                </form>
+            </div>
         </div>
+        
+        <!-- Feed de posts -->
+        <h2 class="feed-title">📱 Feed</h2>
+        
+        {% if posts %}
+            {% for post in posts %}
+            <div class="post-card">
+                <div class="card-body">
+                    <!-- Meta información -->
+                    <div class="post-meta">
+                        {% set post_user = usuarios_dict.get(post.autor) %}
+                        {% if post_user %}
+                            <a href="{{ url_for('perfil', user_id=post_user.id, current_user_id=user_id) }}" class="post-author">
+                                👤 {{ post.autor }}
+                            </a>
+                        {% else %}
+                            <span class="post-author">👤 {{ post.autor }}</span>
+                        {% endif %}
+                        <span class="post-time">{{ post.fecha.strftime('%d/%m/%Y %H:%M') if post.fecha else 'Ahora' }}</span>
+                    </div>
+
+                    <!-- Contenido -->
+                    {% if post.texto %}
+                        <p class="card-text">{{ post.texto }}</p>
+                    {% endif %}
+
+                    <!-- Imagen si existe -->
+                    {% if post.imagen %}
+                        <img src="{{ url_for('static', filename=post.imagen) }}" alt="Post image" class="post-image">
+                    {% endif %}
+
+                    <!-- Botón de like -->
+                    <div style="margin-top: 1rem;">
+                        {% if post.id in user_likes %}
+                            <a href="/like/{{ post.id }}/{{ user_id }}" class="btn btn-outline-danger liked">
+                                ❤️ {{ post.likes_count|length }} Me gusta
+                            </a>
+                        {% else %}
+                            <a href="/like/{{ post.id }}/{{ user_id }}" class="btn btn-outline-danger">
+                                🤍 {{ post.likes_count|length }} Me gusta
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                📝 No hay posts aún. ¡Sé el primero en publicar algo increíble!
+            </div>
+        {% endif %}
     </div>
+
+    <script>
+        // Preview de imagen
+        document.getElementById('imagen').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById('preview').src = event.target.result;
+                    document.getElementById('preview-container').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function buscarUsuarios() {
+            const query = document.getElementById('searchInput').value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+
+            if (query.length < 2) {
+                resultsDiv.innerHTML = query ? '<p class="no-results">Escribe al menos 2 caracteres</p>' : '';
+                return;
+            }
+
+            fetch(`/buscar/{{ user_id }}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(users => {
+                    if (!users.length) {
+                        resultsDiv.innerHTML = '<p class="no-results">No se encontraron usuarios</p>';
+                        return;
+                    }
+
+                    resultsDiv.innerHTML = users.map(user => `
+                        <a class="user-card" href="/perfil/${user.id}/{{ user_id }}">
+                            <span class="user-avatar">${(user.usuario || 'U').replace('@', '').charAt(0).toUpperCase()}</span>
+                            <span class="user-info">
+                                <strong class="username">${user.usuario}</strong>
+                                <span class="userphone">${user.nombre || 'Ver perfil'}</span>
+                            </span>
+                        </a>
+                    `).join('');
+                })
+                .catch(() => {
+                    resultsDiv.innerHTML = '<p class="no-results">No se pudo completar la búsqueda</p>';
+                });
+        }
+
+        document.getElementById('searchInput').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                buscarUsuarios();
+            }
+        });
+    </script>
 </body>
 </html>

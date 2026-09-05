@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensajes - ComfeSocial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_new.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <span class="logo-mark" aria-hidden="true">C</span>
+                <span>ComfeSocial</span>
+            </div>
+            <div class="header-actions">
+                <a href="{{ url_for('home', user_id=user_id) }}" class="btn btn-outline-light">Volver al inicio</a>
+                <a href="{{ url_for('perfil', user_id=user_id, current_user_id=user_id) }}" class="btn btn-light">👤 {{ usuario.usuario }}</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container messages-page">
+        <div class="messages-heading">
+            <div>
+                <p class="eyebrow">Bandeja privada</p>
+                <h1>Mis conversaciones</h1>
+            </div>
+            {% if unread_count %}
+                <span class="messages-total">{{ unread_count }} nuevos</span>
+            {% endif %}
+        </div>
+
+        <section class="conversation-list">
+            {% if conversaciones %}
+                {% for conversacion in conversaciones %}
+                    <a class="conversation-item" href="{{ url_for('chat', emisor_id=user_id, receptor_id=conversacion.usuario.id) }}">
+                        <span class="conversation-avatar">{{ conversacion.usuario.usuario.replace('@', '')[0]|upper }}</span>
+                        <span class="conversation-content">
+                            <strong>{{ conversacion.usuario.usuario }}</strong>
+                            <span>{{ conversacion.ultimo.contenido }}</span>
+                        </span>
+                        <span class="conversation-meta">
+                            {% if conversacion.nuevos %}
+                                <b class="conversation-unread">{{ conversacion.nuevos }}</b>
+                            {% endif %}
+                            <small>{{ conversacion.ultimo.fecha.strftime('%d/%m') if conversacion.ultimo.fecha else '' }}</small>
+                        </span>
+                    </a>
+                {% endfor %}
+            {% else %}
+                <div class="empty-conversations">
+                    <span class="empty-chat-icon">💬</span>
+                    <h2>Aún no tienes conversaciones</h2>
+                    <p>Busca una persona y empieza a escribirle.</p>
+                    <a class="btn btn-primary" href="{{ url_for('home', user_id=user_id) }}">Buscar personas</a>
+                </div>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>
