@@ -28,8 +28,15 @@ def allowed_file(filename):
 def file_extension(filename):
     return filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
 
-# Configuración de la base de datos SQLite
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///usuarios.db'
+# En Render, DATABASE_URL debe apuntar a una base PostgreSQL persistente.
+# Si no existe, se conserva SQLite para desarrollo local.
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///usuarios.db')
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql+psycopg2://', 1)
+elif database_url.startswith('postgresql://'):
+    database_url = database_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
