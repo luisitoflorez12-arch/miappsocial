@@ -32,6 +32,12 @@
                                         {% if m.imagen %}
                                             <img class="message-image" src="{{ url_for('static', filename=m.imagen) }}" alt="Imagen enviada">
                                         {% endif %}
+                                        {% if m.video %}
+                                            <video class="message-video" controls preload="metadata">
+                                                <source src="{{ url_for('static', filename=m.video) }}">
+                                                Tu navegador no puede reproducir este video.
+                                            </video>
+                                        {% endif %}
                                         {% if m.contenido %}
                                             <span class="message-text">{{ m.contenido }}</span>
                                         {% endif %}
@@ -52,12 +58,14 @@
                         <div class="input-group">
                             <label class="chat-image-button" for="imagen-chat" title="Adjuntar imagen">📷</label>
                             <input type="file" id="imagen-chat" name="imagen" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+                            <label class="chat-image-button chat-video-button" for="video-chat" title="Adjuntar video">🎥</label>
+                            <input type="file" id="video-chat" name="video" accept="video/mp4,video/webm,video/quicktime,video/ogg" hidden>
                             <input type="text" name="mensaje" class="form-control" placeholder="Escribe tu mensaje...">
                             <button class="btn btn-primary" type="submit">
                                 📤 Enviar
                             </button>
                         </div>
-                        <small id="selected-image" class="selected-image">Puedes enviar texto, una imagen o ambos.</small>
+                        <small id="selected-image" class="selected-image">Puedes enviar texto, una foto, un video o combinarlos.</small>
                     </form>
                 </div>
             </div>
@@ -75,8 +83,15 @@
             const selectedImage = document.getElementById('selected-image');
             selectedImage.textContent = this.files.length
                 ? `Imagen seleccionada: ${this.files[0].name}`
-                : 'Puedes enviar texto, una imagen o ambos.';
+                : 'Puedes enviar texto, una foto, un video o combinarlos.';
         });
+
+            document.getElementById('video-chat').addEventListener('change', function() {
+                const selectedImage = document.getElementById('selected-image');
+                selectedImage.textContent = this.files.length
+                ? `Video seleccionado: ${this.files[0].name}`
+                : 'Puedes enviar texto, una foto, un video o combinarlos.';
+            });
     </script>
 </body>
 </html>

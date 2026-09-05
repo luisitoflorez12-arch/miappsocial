@@ -13,7 +13,9 @@ app.config['SESSION_COOKIE_SECURE'] = False  # Cambiar a True en producción con
 
 # Configuración de uploads
 UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+VIDEO_EXTENSIONS = {'mp4', 'webm', 'mov', 'ogg'}
+ALLOWED_EXTENSIONS = IMAGE_EXTENSIONS | VIDEO_EXTENSIONS
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -22,6 +24,9 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def file_extension(filename):
+    return filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
 
 # Configuración de la base de datos SQLite
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///usuarios.db'
@@ -45,11 +50,22 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     texto = db.Column(db.Text, nullable=False)
     imagen = db.Column(db.String(255))  # Ruta de imagen
+    video = db.Column(db.String(255))
     autor_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
     autor = db.Column(db.String(80), nullable=False)
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     
     likes_count = db.relationship('Like', cascade='all, delete-orphan', lazy=True)
+    comentarios = db.relationship('Comentario', cascade='all, delete-orphan', lazy=True,
+                                  order_by='Comentario.fecha.asc()')
+
+class Comentario(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    contenido = db.Column(db.Text, nullable=False)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    usuario = db.relationship('Usuario', foreign_keys=[usuario_id])
 
 # Modelo de likes
 class Like(db.Model):
@@ -67,6 +83,7 @@ class Mensaje(db.Model):
     receptor_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
     contenido = db.Column(db.Text, nullable=False, default="")
     imagen = db.Column(db.String(255))
+    video = db.Column(db.String(255))
     leido = db.Column(db.Boolean, default=False, nullable=False)
     fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
@@ -86,6 +103,12 @@ with app.app_context():
     if 'imagen' not in {column['name'] for column in inspect(db.engine).get_columns('mensaje')}:
         with db.engine.begin() as connection:
             connection.execute(text('ALTER TABLE mensaje ADD COLUMN imagen VARCHAR(255)'))
+    if 'video' not in {column['name'] for column in inspect(db.engine).get_columns('mensaje')}:
+        with db.engine.begin() as connection:
+            connection.execute(text('ALTER TABLE mensaje ADD COLUMN video VARCHAR(255)'))
+    if 'video' not in {column['name'] for column in inspect(db.engine).get_columns('post')}:
+        with db.engine.begin() as connection:
+            connection.execute(text('ALTER TABLE post ADD COLUMN video VARCHAR(255)'))
 
 @app.route("/")
 def index():
@@ -189,21 +212,43 @@ def add_post(user_id):
     if user:
         texto = request.form.get("comentario", "").strip()
         imagen = None
+        video = None
         
         # Manejar upload de imagen
         if 'imagen' in request.files:
             file = request.files['imagen']
-            if file and file.filename and allowed_file(file.filename):
+            extension = file_extension(file.filename) if file and file.filename else ''
+            if file and file.filename and extension in IMAGE_EXTENSIONS:
                 filename = secure_filename(f"{user.id}_{datetime.now().timestamp()}_{file.filename}")
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(filepath)
                 imagen = f"uploads/{filename}"
+
+        if 'video' in request.files:
+            file = request.files['video']
+            extension = file_extension(file.filename) if file and file.filename else ''
+            if file and file.filename and extension in VIDEO_EXTENSIONS:
+                filename = secure_filename(f"video_{user.id}_{datetime.now().timestamp()}_{file.filename}")
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(filepath)
+                video = f"uploads/{filename}"
         
-        if texto or imagen:  # Permitir posts solo con imagen
-            nuevo_post = Post(texto=texto, imagen=imagen, autor_id=user.id, autor=user.usuario)
+        if texto or imagen or video:
+            nuevo_post = Post(texto=texto, imagen=imagen, video=video,
+                              autor_id=user.id, autor=user.usuario)
             db.session.add(nuevo_post)
             db.session.commit()
             flash("Post publicado correctamente.")
+    return redirect(url_for("home", user_id=user_id))
+
+@app.route("/comentar/<int:post_id>/<int:user_id>", methods=["POST"])
+def comentar(post_id, user_id):
+    contenido = request.form.get("comentario", "").strip()
+    post = Post.query.get(post_id)
+    user = Usuario.query.get(user_id)
+    if post and user and contenido:
+        db.session.add(Comentario(contenido=contenido, usuario_id=user.id, post_id=post.id))
+        db.session.commit()
     return redirect(url_for("home", user_id=user_id))
 
 @app.route("/like/<int:post_id>/<int:user_id>")
@@ -273,7 +318,9 @@ def chat(emisor_id, receptor_id):
     if request.method == "POST":
         contenido = request.form.get("mensaje", "").strip()
         imagen = None
+        video = None
         archivo = request.files.get("imagen")
+        archivo_video = request.files.get("video")
 
         if archivo and archivo.filename:
             if not allowed_file(archivo.filename):
@@ -286,12 +333,23 @@ def chat(emisor_id, receptor_id):
             archivo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             imagen = f"uploads/{filename}"
 
-        if contenido or imagen:
+        if archivo_video and archivo_video.filename:
+            if file_extension(archivo_video.filename) not in VIDEO_EXTENSIONS:
+                flash("El formato del video no está permitido.")
+                return redirect(url_for("chat", emisor_id=emisor.id, receptor_id=receptor.id))
+            filename = secure_filename(
+                f"chat_video_{emisor.id}_{receptor.id}_{datetime.now().timestamp()}_{archivo_video.filename}"
+            )
+            archivo_video.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            video = f"uploads/{filename}"
+
+        if contenido or imagen or video:
             nuevo_mensaje = Mensaje(
                 emisor_id=emisor.id,
                 receptor_id=receptor.id,
                 contenido=contenido,
                 imagen=imagen,
+                video=video,
             )
             db.session.add(nuevo_mensaje)
             db.session.commit()

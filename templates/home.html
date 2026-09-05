@@ -16,7 +16,7 @@
     <header>
         <div class="container">
             <div class="logo">
-                <span class="logo-mark" aria-hidden="true">C</span>
+                <span class="logo-mark" aria-hidden="true"><span class="globe-lines"></span></span>
                 <span>ComfeSocial</span>
             </div>
             <div class="header-actions">
@@ -59,8 +59,12 @@
                         <label for="imagen" class="file-label">
                             🖼️ Agregar imagen (opcional)
                         </label>
-                        <input type="file" id="imagen" name="imagen" accept="image/*" style="display: none;">
-                        <small class="text-muted">PNG, JPG, JPEG, GIF (máx. 16MB)</small>
+                        <input type="file" id="imagen" name="imagen" accept="image/png,image/jpeg,image/gif,image/webp" style="display: none;">
+                        <label for="video" class="file-label video-label">
+                            🎥 Agregar video (opcional)
+                        </label>
+                        <input type="file" id="video" name="video" accept="video/mp4,video/webm,video/quicktime,video/ogg" style="display: none;">
+                        <small class="text-muted">Imagen o video (máx. 16MB)</small>
                         <div id="preview-container" style="margin-top: 1rem; display: none;">
                             <img id="preview" src="" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
                         </div>
@@ -103,6 +107,13 @@
                         <img src="{{ url_for('static', filename=post.imagen) }}" alt="Post image" class="post-image">
                     {% endif %}
 
+                    {% if post.video %}
+                        <video class="post-video" controls preload="metadata">
+                            <source src="{{ url_for('static', filename=post.video) }}">
+                            Tu navegador no puede reproducir este video.
+                        </video>
+                    {% endif %}
+
                     <!-- Botón de like -->
                     <div style="margin-top: 1rem;">
                         {% if post.id in user_likes %}
@@ -114,6 +125,20 @@
                                 🤍 {{ post.likes_count|length }} Me gusta
                             </a>
                         {% endif %}
+                    </div>
+
+                    <div class="comments-section">
+                        <h3>Comentarios ({{ post.comentarios|length }})</h3>
+                        {% for comentario in post.comentarios %}
+                            <div class="comment-item">
+                                <strong>{{ comentario.usuario.usuario }}</strong>
+                                <span>{{ comentario.contenido }}</span>
+                            </div>
+                        {% endfor %}
+                        <form class="comment-form" method="POST" action="{{ url_for('comentar', post_id=post.id, user_id=user_id) }}">
+                            <input class="form-control" type="text" name="comentario" placeholder="Escribe un comentario..." required>
+                            <button class="btn btn-secondary" type="submit">Comentar</button>
+                        </form>
                     </div>
                 </div>
             </div>
