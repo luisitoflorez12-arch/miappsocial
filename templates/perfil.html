@@ -16,7 +16,7 @@
                     {% if usuario.foto %}
                         <img src="{{ usuario.foto }}" class="profile-pic" alt="Foto de {{ usuario.usuario }}">
                     {% else %}
-                        <img src="https://via.placeholder.com/150?text={{ usuario.usuario[1]|upper }}" class="profile-pic" alt="Foto de perfil">
+                        <img src="https://via.placeholder.com/150?text={{ usuario.usuario[0]|upper }}" class="profile-pic" alt="Foto de perfil">
                     {% endif %}
 
                     <!-- Nombre y usuario -->

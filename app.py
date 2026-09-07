@@ -125,6 +125,7 @@ def index():
 def login():
     if request.method == "POST":
         usuario = request.form.get("usuario", "").strip()
+        usuario_sin_arroba = usuario.lstrip("@").strip()
         password = request.form.get("password", "")
 
         # Validación básica
@@ -133,7 +134,10 @@ def login():
             return redirect(url_for("login"))
 
         try:
-            user = Usuario.query.filter_by(usuario=usuario).first()
+            user = Usuario.query.filter(
+                (Usuario.usuario == usuario_sin_arroba) |
+                (Usuario.usuario == usuario)
+            ).first()
             if user and check_password_hash(user.password, password):
                 session['user_id'] = user.id
                 session['usuario'] = user.usuario
@@ -158,7 +162,7 @@ def logout():
 def registro():
     if request.method == "POST":
         telefono = request.form.get("telefono")
-        usuario = request.form.get("usuario")
+        usuario = request.form.get("usuario", "").strip().lstrip("@").strip()
         password = request.form.get("password")
 
         # Validaciones
@@ -166,8 +170,8 @@ def registro():
             flash("El número de teléfono debe contener solo dígitos.")
             return redirect(url_for("registro"))
 
-        if not usuario.startswith("@"):
-            flash("El usuario debe comenzar con '@'.")
+        if not usuario:
+            flash("El nombre de usuario es obligatorio.")
             return redirect(url_for("registro"))
 
         if not password or len(password) < 4:

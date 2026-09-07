@@ -10,7 +10,7 @@
     --light-blue: #e6f0ff;
     --sky-blue: #00b4d8;
     --dark-bg: #0f1419;
-    --light-bg: #f5f7fb;
+    --light-bg: #f6f8fb;
     --card-bg: #ffffff;
     --text-dark: #1a1a1a;
     --text-light: #ecf0f1;
@@ -29,7 +29,7 @@ html, body {
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #f5f7fb 0%, #e8ecf5 100%);
+    background: var(--light-bg);
     color: var(--text-dark);
     font-size: 16px;
     min-height: 100vh;
@@ -40,10 +40,10 @@ body {
    ======================================== */
 
 header {
-    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+    background: var(--primary-blue);
     color: white;
     padding: 1rem 0;
-    box-shadow: 0 4px 15px rgba(0, 102, 204, 0.2);
+    box-shadow: 0 1px 4px rgba(0, 34, 85, 0.16);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -115,22 +115,23 @@ header .logo img {
     border-right: 0;
     border-left: 0;
 }
-}
 
 .header-actions {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    min-width: 0;
 }
 
 .header-search {
     position: relative;
     display: flex;
     gap: 0.4rem;
+    min-width: 0;
 }
 
 .header-search .form-control {
-    width: 220px;
+    width: clamp(150px, 20vw, 220px);
     min-height: 42px;
     border: 0;
 }
@@ -164,7 +165,7 @@ header .nav-links a:hover {
 
 .btn {
     border: none;
-    border-radius: 25px;
+    border-radius: 8px;
     padding: 0.7rem 1.5rem;
     font-weight: 600;
     font-size: 1rem;
@@ -282,16 +283,15 @@ main.container {
 .post-card, .card, .form-container {
     background: var(--card-bg);
     border: none;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 102, 204, 0.08);
+    border-radius: 10px;
+    box-shadow: 0 1px 5px rgba(0, 34, 85, 0.08);
     margin-bottom: 1.5rem;
     overflow: hidden;
     transition: all 0.3s ease;
 }
 
 .post-card:hover, .card:hover {
-    box-shadow: 0 6px 20px rgba(0, 102, 204, 0.15);
-    transform: translateY(-2px);
+    box-shadow: 0 3px 12px rgba(0, 34, 85, 0.12);
 }
 
 .card-body {
@@ -896,7 +896,11 @@ a:hover {
 
     .header-actions {
         width: 100%;
-        justify-content: flex-end;
+        justify-content: stretch;
+    }
+
+    .header-search {
+        flex: 1;
     }
 
     .header-search .form-control {
@@ -958,6 +962,7 @@ a:hover {
     .header-actions {
         align-items: stretch;
         flex-direction: column;
+        gap: 0.5rem;
     }
 
     .header-search {
@@ -1073,7 +1078,7 @@ footer p {
     position: absolute;
     top: calc(100% + 0.6rem);
     right: 0;
-    width: 330px;
+    width: min(330px, calc(100vw - 2rem));
     max-height: 300px;
     overflow-y: auto;
     padding: 0.45rem;
