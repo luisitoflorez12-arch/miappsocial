@@ -4,7 +4,9 @@ from sqlalchemy import inspect, text
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
+import base64
 from datetime import datetime
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = "clave_secreta"
@@ -18,6 +20,8 @@ VIDEO_EXTENSIONS = {'mp4', 'webm', 'mov', 'ogg'}
 ALLOWED_EXTENSIONS = IMAGE_EXTENSIONS | VIDEO_EXTENSIONS
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+ADMIN_USERNAME = "ADMIN1"
+ADMIN_PASSWORD = "LDFMLUIS"
 
 # Crear carpeta de uploads si no existe
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -51,6 +55,7 @@ class Usuario(db.Model):
     nombre = db.Column(db.String(100))
     bio = db.Column(db.Text)
     foto = db.Column(db.String(200))  # URL o ruta de imagen
+    foto_data = db.Column(db.Text)  # Imagen subida, guardada en la base de datos
 
 # Modelo de posts
 class Post(db.Model):
@@ -97,6 +102,20 @@ class Mensaje(db.Model):
     emisor = db.relationship('Usuario', foreign_keys=[emisor_id])
     receptor = db.relationship('Usuario', foreign_keys=[receptor_id])
 
+class Seguidor(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    seguidor_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    seguido_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    __table_args__ = (db.UniqueConstraint('seguidor_id', 'seguido_id', name='unique_seguidor'),)
+
+class Bloqueo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    bloqueador_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    bloqueado_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    __table_args__ = (db.UniqueConstraint('bloqueador_id', 'bloqueado_id', name='unique_bloqueo'),)
+
 # Crear tablas si no existen
 with app.app_context():
     db.create_all()
@@ -116,6 +135,9 @@ with app.app_context():
     if 'video' not in {column['name'] for column in inspect(db.engine).get_columns('post')}:
         with db.engine.begin() as connection:
             connection.execute(text('ALTER TABLE post ADD COLUMN video VARCHAR(255)'))
+    if 'foto_data' not in {column['name'] for column in inspect(db.engine).get_columns('usuario')}:
+        with db.engine.begin() as connection:
+            connection.execute(text('ALTER TABLE usuario ADD COLUMN foto_data TEXT'))
 
 @app.route("/")
 def index():
@@ -132,6 +154,12 @@ def login():
         if not usuario or not password:
             flash("Usuario y contraseña son requeridos.")
             return redirect(url_for("login"))
+
+        if usuario.upper() == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session.clear()
+            session['is_admin'] = True
+            session['usuario'] = ADMIN_USERNAME
+            return redirect(url_for("admin_panel"))
 
         try:
             user = Usuario.query.filter(
@@ -157,6 +185,15 @@ def logout():
     session.clear()
     flash("Sesión cerrada.")
     return redirect(url_for("index"))
+
+def admin_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not session.get('is_admin'):
+            flash("Acceso exclusivo del administrador.")
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+    return wrapped
 
 @app.route("/registro", methods=["GET", "POST"])
 def registro():
@@ -288,10 +325,128 @@ def like(post_id, user_id):
 def perfil(user_id, current_user_id):
     usuario = Usuario.query.get(user_id)
     if usuario:
-        return render_template("perfil.html", usuario=usuario, current_user_id=current_user_id)
+        siguiendo = Seguidor.query.filter_by(
+            seguidor_id=current_user_id, seguido_id=user_id
+        ).first() is not None
+        bloqueado = Bloqueo.query.filter_by(
+            bloqueador_id=current_user_id, bloqueado_id=user_id
+        ).first() is not None
+        seguidores_count = Seguidor.query.filter_by(seguido_id=user_id).count()
+        seguidos_count = Seguidor.query.filter_by(seguidor_id=user_id).count()
+        return render_template(
+            "perfil.html", usuario=usuario, current_user_id=current_user_id,
+            siguiendo=siguiendo, bloqueado=bloqueado,
+            seguidores_count=seguidores_count, seguidos_count=seguidos_count,
+        )
     else:
         flash("Usuario no encontrado.")
         return redirect(url_for("index"))
+
+@app.route("/seguir/<int:target_id>/<int:current_user_id>", methods=["POST"])
+def seguir(target_id, current_user_id):
+    if target_id != current_user_id:
+        existing = Seguidor.query.filter_by(
+            seguidor_id=current_user_id, seguido_id=target_id
+        ).first()
+        blocked = Bloqueo.query.filter(
+            ((Bloqueo.bloqueador_id == current_user_id) & (Bloqueo.bloqueado_id == target_id)) |
+            ((Bloqueo.bloqueador_id == target_id) & (Bloqueo.bloqueado_id == current_user_id))
+        ).first()
+        if blocked:
+            flash("No puedes seguir a este usuario mientras exista un bloqueo.")
+        elif existing:
+            db.session.delete(existing)
+        else:
+            db.session.add(Seguidor(seguidor_id=current_user_id, seguido_id=target_id))
+        db.session.commit()
+    return redirect(url_for("perfil", user_id=target_id, current_user_id=current_user_id))
+
+@app.route("/bloquear/<int:target_id>/<int:current_user_id>", methods=["POST"])
+def bloquear(target_id, current_user_id):
+    if target_id != current_user_id:
+        existing = Bloqueo.query.filter_by(
+            bloqueador_id=current_user_id, bloqueado_id=target_id
+        ).first()
+        if existing:
+            db.session.delete(existing)
+        else:
+            db.session.add(Bloqueo(bloqueador_id=current_user_id, bloqueado_id=target_id))
+            relationship = Seguidor.query.filter(
+                ((Seguidor.seguidor_id == current_user_id) & (Seguidor.seguido_id == target_id)) |
+                ((Seguidor.seguidor_id == target_id) & (Seguidor.seguido_id == current_user_id))
+            ).all()
+            for item in relationship:
+                db.session.delete(item)
+        db.session.commit()
+    return redirect(url_for("perfil", user_id=target_id, current_user_id=current_user_id))
+
+@app.route("/seguidores/<int:user_id>/<int:current_user_id>")
+def seguidores(user_id, current_user_id):
+    usuario = Usuario.query.get(user_id)
+    if not usuario:
+        flash("Usuario no encontrado.")
+        return redirect(url_for("index"))
+    followers = [item.seguidor_id for item in Seguidor.query.filter_by(seguido_id=user_id).all()]
+    seguidores_users = Usuario.query.filter(Usuario.id.in_(followers)).all() if followers else []
+    return render_template(
+        "seguidores.html", usuario=usuario, current_user_id=current_user_id,
+        seguidores=seguidores_users, titulo="Seguidores", vacio="Todavía no tiene seguidores.",
+    )
+
+@app.route("/seguidos/<int:user_id>/<int:current_user_id>")
+def seguidos(user_id, current_user_id):
+    usuario = Usuario.query.get(user_id)
+    if not usuario:
+        flash("Usuario no encontrado.")
+        return redirect(url_for("index"))
+    followed = [item.seguido_id for item in Seguidor.query.filter_by(seguidor_id=user_id).all()]
+    seguidos_users = Usuario.query.filter(Usuario.id.in_(followed)).all() if followed else []
+    return render_template(
+        "seguidores.html", usuario=usuario, current_user_id=current_user_id,
+        seguidores=seguidos_users, titulo="Amigos agregados", vacio="Todavía no ha agregado amigos.",
+    )
+
+@app.route("/admin")
+@admin_required
+def admin_panel():
+    return render_template(
+        "admin.html", usuarios=Usuario.query.order_by(Usuario.id.desc()).all(),
+        posts=Post.query.order_by(Post.fecha.desc()).all(),
+        comentarios=Comentario.query.order_by(Comentario.fecha.desc()).all(),
+        mensajes=Mensaje.query.order_by(Mensaje.fecha.desc()).all(),
+    )
+
+@app.route("/admin/eliminar", methods=["POST"])
+@admin_required
+def admin_eliminar():
+    user_ids = {int(value) for value in request.form.getlist("user_ids")}
+    post_ids = {int(value) for value in request.form.getlist("post_ids")}
+    comment_ids = {int(value) for value in request.form.getlist("comment_ids")}
+    message_ids = {int(value) for value in request.form.getlist("message_ids")}
+
+    for user_id in user_ids:
+        user_posts = Post.query.filter_by(autor_id=user_id).all()
+        post_ids.update(post.id for post in user_posts)
+        Seguidor.query.filter((Seguidor.seguidor_id == user_id) | (Seguidor.seguido_id == user_id)).delete(synchronize_session=False)
+        Bloqueo.query.filter((Bloqueo.bloqueador_id == user_id) | (Bloqueo.bloqueado_id == user_id)).delete(synchronize_session=False)
+        Comentario.query.filter_by(usuario_id=user_id).delete(synchronize_session=False)
+        Mensaje.query.filter((Mensaje.emisor_id == user_id) | (Mensaje.receptor_id == user_id)).delete(synchronize_session=False)
+        Like.query.filter_by(usuario_id=user_id).delete(synchronize_session=False)
+
+    if post_ids:
+        Comentario.query.filter(Comentario.post_id.in_(post_ids)).delete(synchronize_session=False)
+        Like.query.filter(Like.post_id.in_(post_ids)).delete(synchronize_session=False)
+        Post.query.filter(Post.id.in_(post_ids)).delete(synchronize_session=False)
+    if comment_ids:
+        Comentario.query.filter(Comentario.id.in_(comment_ids)).delete(synchronize_session=False)
+    if message_ids:
+        Mensaje.query.filter(Mensaje.id.in_(message_ids)).delete(synchronize_session=False)
+    if user_ids:
+        Usuario.query.filter(Usuario.id.in_(user_ids)).delete(synchronize_session=False)
+
+    db.session.commit()
+    flash("Elementos seleccionados eliminados.")
+    return redirect(url_for("admin_panel"))
 
 # Ruta para editar perfil
 @app.route("/editar_perfil/<int:user_id>", methods=["GET", "POST"])
@@ -304,7 +459,18 @@ def editar_perfil(user_id):
     if request.method == "POST":
         usuario.nombre = request.form.get("nombre", usuario.nombre)
         usuario.bio = request.form.get("bio", usuario.bio)
-        usuario.foto = request.form.get("foto", usuario.foto)
+        foto = request.files.get("foto")
+        if foto and foto.filename:
+            extension = file_extension(foto.filename)
+            if extension not in IMAGE_EXTENSIONS:
+                flash("La foto debe ser PNG, JPG, JPEG, GIF o WEBP.")
+                return redirect(url_for("editar_perfil", user_id=user_id))
+            contenido = foto.read()
+            if len(contenido) > 4 * 1024 * 1024:
+                flash("La foto de perfil no puede superar 4 MB.")
+                return redirect(url_for("editar_perfil", user_id=user_id))
+            mime = foto.mimetype or f"image/{extension}"
+            usuario.foto_data = f"data:{mime};base64,{base64.b64encode(contenido).decode('ascii')}"
         
         try:
             db.session.commit()

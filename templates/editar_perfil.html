@@ -27,7 +27,7 @@
                     {% endif %}
                 {% endwith %}
 
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     <!-- Nombre -->
                     <div class="form-group">
                         <label for="nombre" class="form-label">Nombre Completo</label>
@@ -42,14 +42,13 @@
                                   placeholder="Cuéntanos algo sobre ti...">{{ usuario.bio or '' }}</textarea>
                     </div>
 
-                    <!-- Foto de Perfil (URL) -->
+                    <!-- Foto de Perfil -->
                     <div class="form-group">
-                        <label for="foto" class="form-label">URL de Foto de Perfil</label>
-                        <input type="url" class="form-control" id="foto" name="foto" 
-                               value="{{ usuario.foto or '' }}" placeholder="https://ejemplo.com/tu-foto.jpg">
-                        {% if usuario.foto %}
+                        <label for="foto" class="form-label">Foto de perfil</label>
+                        <input type="file" class="form-control" id="foto" name="foto" accept="image/png,image/jpeg,image/gif,image/webp">
+                        {% if usuario.foto_data or usuario.foto %}
                             <small class="text-muted">Foto actual:</small>
-                            <img src="{{ usuario.foto }}" class="preview-pic" alt="Foto de perfil">
+                            <img src="{{ usuario.foto_data or usuario.foto }}" class="preview-pic" alt="Foto de perfil">
                         {% endif %}
                     </div>
 
@@ -70,7 +69,7 @@
                 <div class="alert alert-info">
                     <strong>ℹ️ Información:</strong><br>
                     • Puedes dejar campos vacíos si no deseas cambiarlos<br>
-                    • Para la foto, usa una URL de imagen directa<br>
+                    • La foto se guarda directamente en tu cuenta<br>
                     • Los cambios se guardarán inmediatamente
                 </div>
             </div>

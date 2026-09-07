@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo }} de {{ usuario.usuario }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_new.css') }}">
+</head>
+<body>
+    <main class="container followers-page">
+        <a class="back-link" href="{{ url_for('perfil', user_id=usuario.id, current_user_id=current_user_id) }}">← Volver al perfil</a>
+        <h1>{{ titulo }} de {{ usuario.usuario }}</h1>
+        <section class="followers-list">
+            {% for follower in seguidores %}
+                <a class="user-card" href="{{ url_for('perfil', user_id=follower.id, current_user_id=current_user_id) }}">
+                    {% if follower.foto_data or follower.foto %}
+                        <img class="user-avatar" src="{{ follower.foto_data or follower.foto }}" alt="">
+                    {% else %}
+                        <span class="user-avatar">{{ follower.usuario[0]|upper }}</span>
+                    {% endif %}
+                    <span class="user-info"><strong class="username">{{ follower.usuario }}</strong><span class="userphone">{{ follower.nombre or 'Ver perfil' }}</span></span>
+                </a>
+            {% else %}
+                <p class="empty-state">{{ vacio }}</p>
+            {% endfor %}
+        </section>
+    </main>
+</body>
+</html>

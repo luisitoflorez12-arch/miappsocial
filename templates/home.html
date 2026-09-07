@@ -47,11 +47,18 @@
         {% endwith %}
 
         <!-- Formulario para publicar -->
-        <div class="post-card">
+        <div class="post-card composer-card">
             <div class="card-body">
-                <h5 class="card-title">✍️ ¿Qué estás pensando, {{ usuario.usuario }}?</h5>
+                <div class="composer-heading">
+                    {% if usuario.foto_data or usuario.foto %}
+                        <img class="composer-avatar" src="{{ usuario.foto_data or usuario.foto }}" alt="">
+                    {% else %}
+                        <span class="composer-avatar composer-avatar-fallback">{{ usuario.usuario[0]|upper }}</span>
+                    {% endif %}
+                    <h5 class="card-title">¿Qué estás pensando, {{ usuario.usuario }}?</h5>
+                </div>
                 <form action="/add/{{ user_id }}" method="post" enctype="multipart/form-data">
-                    <div class="form-group" style="margin-bottom: 1rem;">
+                    <div class="form-group composer-message" style="margin-bottom: 1rem;">
                         <textarea name="comentario" class="form-control" placeholder="Comparte tu pensamiento..." rows="3"></textarea>
                     </div>
                     

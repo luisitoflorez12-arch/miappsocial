@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de administración</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_new.css') }}">
+</head>
+<body>
+    <header><div class="container admin-header"><div class="logo"><span class="logo-mark">A</span><span>Panel Admin</span></div><a class="btn btn-outline-light" href="{{ url_for('logout') }}">Cerrar sesión</a></div></header>
+    <main class="container admin-page">
+        <h1>Administrar contenido</h1>
+        <p class="admin-warning">Selecciona los elementos que deseas eliminar. Esta acción no se puede deshacer.</p>
+        <form method="POST" action="{{ url_for('admin_eliminar') }}">
+            <section class="admin-section"><h2>Usuarios</h2>{% for item in usuarios %}<label class="admin-row"><input type="checkbox" name="user_ids" value="{{ item.id }}"><span><strong>{{ item.usuario }}</strong><small>{{ item.nombre or item.telefono }}</small></span></label>{% else %}<p>No hay usuarios.</p>{% endfor %}</section>
+            <section class="admin-section"><h2>Publicaciones</h2>{% for item in posts %}<label class="admin-row"><input type="checkbox" name="post_ids" value="{{ item.id }}"><span><strong>#{{ item.id }} · {{ item.autor }}</strong><small>{{ item.texto[:100] }}</small></span></label>{% else %}<p>No hay publicaciones.</p>{% endfor %}</section>
+            <section class="admin-section"><h2>Comentarios</h2>{% for item in comentarios %}<label class="admin-row"><input type="checkbox" name="comment_ids" value="{{ item.id }}"><span><strong>#{{ item.id }} · {{ item.usuario.usuario }}</strong><small>{{ item.contenido[:100] }}</small></span></label>{% else %}<p>No hay comentarios.</p>{% endfor %}</section>
+            <section class="admin-section"><h2>Chats</h2>{% for item in mensajes %}<label class="admin-row"><input type="checkbox" name="message_ids" value="{{ item.id }}"><span><strong>#{{ item.id }} · {{ item.emisor.usuario }} → {{ item.receptor.usuario }}</strong><small>{{ item.contenido[:100] or 'Archivo adjunto' }}</small></span></label>{% else %}<p>No hay mensajes.</p>{% endfor %}</section>
+            <button class="btn btn-outline-danger admin-delete" type="submit" onclick="return confirm('¿Eliminar los elementos seleccionados?');">Eliminar seleccionados</button>
+        </form>
+    </main>
+</body>
+</html>
