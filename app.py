@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
@@ -198,9 +199,9 @@ def admin_required(view):
 @app.route("/registro", methods=["GET", "POST"])
 def registro():
     if request.method == "POST":
-        telefono = request.form.get("telefono")
+        telefono = request.form.get("telefono", "").strip()
         usuario = request.form.get("usuario", "").strip().lstrip("@").strip()
-        password = request.form.get("password")
+        password = request.form.get("password", "")
 
         # Validaciones
         if not telefono.isdigit():
@@ -209,6 +210,10 @@ def registro():
 
         if not usuario:
             flash("El nombre de usuario es obligatorio.")
+            return redirect(url_for("registro"))
+
+        if usuario.upper() == ADMIN_USERNAME:
+            flash("Ese nombre de usuario está reservado.")
             return redirect(url_for("registro"))
 
         if not password or len(password) < 4:
@@ -227,7 +232,12 @@ def registro():
         hash = generate_password_hash(password)
         nuevo = Usuario(telefono=telefono, usuario=usuario, password=hash)
         db.session.add(nuevo)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash("El usuario o el número de teléfono ya están registrados.")
+            return redirect(url_for("registro"))
 
         flash("Registro exitoso. Ahora inicia sesión.")
         return redirect(url_for("login"))
