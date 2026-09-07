@@ -351,7 +351,8 @@ main.container {
 }
 
 .composer-card .file-label {
-    margin-right: 0.35rem;
+    margin-right: 0.75rem;
+    margin-bottom: 0.45rem;
 }
 
 .post-card textarea.form-control {
