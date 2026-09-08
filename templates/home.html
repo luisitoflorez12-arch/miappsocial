@@ -13,22 +13,25 @@
             <span class="messages-badge">{{ unread_count }}</span>
         {% endif %}
     </a>
-    <header>
+    <header class="home-header">
         <div class="container">
-            <div class="logo">
-                <span class="logo-mark" aria-hidden="true"><span class="globe-lines"></span></span>
-                <span>ComfeSocial</span>
-            </div>
+            <a href="{{ url_for('perfil', user_id=usuario.id, current_user_id=usuario.id) }}" class="profile-avatar-link" aria-label="Abrir mi perfil" title="Mi perfil">
+                {% if usuario.foto_data or usuario.foto %}
+                    <img src="{{ usuario.foto_data or usuario.foto }}" alt="Foto de perfil de {{ usuario.usuario }}">
+                {% else %}
+                    <span>{{ usuario.usuario[0]|upper }}</span>
+                {% endif %}
+            </a>
             <div class="header-actions">
-                <div class="header-search">
-                    <input type="search" id="searchInput" class="form-control" placeholder="Buscar usuarios..." autocomplete="off" aria-label="Buscar usuarios">
-                    <button type="button" class="btn btn-light" onclick="buscarUsuarios()">Buscar</button>
+                <div class="header-search" id="header-search">
+                    <button type="button" class="search-toggle" id="search-toggle" aria-label="Buscar perfiles" title="Buscar perfiles" aria-expanded="false">⌕</button>
+                    <div class="header-search-panel" id="header-search-panel" hidden>
+                        <input type="search" id="searchInput" class="form-control" placeholder="Buscar perfil..." autocomplete="off" aria-label="Buscar perfiles">
+                        <button type="button" class="btn btn-light" onclick="buscarUsuarios()">Buscar</button>
+                    </div>
                     <div id="searchResults" class="search-results"></div>
                 </div>
-                <a href="{{ url_for('perfil', user_id=usuario.id, current_user_id=usuario.id) }}" class="btn btn-light">
-                    👤 {{ usuario.usuario }}
-                </a>
-                <a href="/logout" class="btn btn-outline-light">Cerrar sesión</a>
+                <a href="/logout" class="logout-button" aria-label="Cerrar sesión" title="Cerrar sesión">Salir</a>
             </div>
         </div>
     </header>
@@ -322,6 +325,14 @@
                     resultsDiv.innerHTML = '<p class="no-results">No se pudo completar la búsqueda</p>';
                 });
         }
+
+        document.getElementById('search-toggle').addEventListener('click', function() {
+            const panel = document.getElementById('header-search-panel');
+            const isOpen = !panel.hidden;
+            panel.hidden = isOpen;
+            this.setAttribute('aria-expanded', String(!isOpen));
+            if (!isOpen) document.getElementById('searchInput').focus();
+        });
 
         document.getElementById('searchInput').addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {

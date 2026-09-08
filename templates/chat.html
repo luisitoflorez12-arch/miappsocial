@@ -12,7 +12,7 @@
             <div class="chat-container">
                 <!-- Encabezado del chat -->
                 <div class="chat-header">
-                    <a href="{{ url_for('home', user_id=emisor.id) }}" class="back-link" aria-label="Volver al inicio" title="Volver al inicio">
+                    <a href="{{ url_for('mensajes', user_id=emisor.id) }}" class="back-link" aria-label="Volver a mis chats" title="Volver a mis chats">
                         <span aria-hidden="true">←</span>
                     </a>
                     <div class="chat-header-person">
@@ -59,7 +59,7 @@
                                             <span class="message-text">{{ m.contenido }}</span>
                                         {% endif %}
                                         {% if m.emisor_id == emisor.id %}
-                                            <span class="message-status {% if m.leido %}is-seen{% endif %}" title="{% if m.leido %}Visto{% else %}Enviado{% endif %}" aria-label="{% if m.leido %}Mensaje visto{% else %}Mensaje enviado{% endif %}">👁</span>
+                                            <span class="message-status {% if m.leido %}is-seen{% endif %}" title="{% if m.leido %}Visto{% else %}Enviado{% endif %}" aria-label="{% if m.leido %}Mensaje visto{% else %}Mensaje enviado{% endif %}">{% if m.leido %}Visto{% else %}Enviado{% endif %}</span>
                                         {% endif %}
                                     </div>
                                     {% if m.emisor_id == emisor.id %}
@@ -232,6 +232,7 @@
             let startX = 0;
             let startY = 0;
             let swiped = false;
+            let replyTriggered = false;
             const openMenu = () => {
                 if (document.getElementById(message.dataset.menuTarget)) toggleMenu(message.dataset.menuTarget);
             };
@@ -239,14 +240,19 @@
                 startX = event.clientX;
                 startY = event.clientY;
                 swiped = false;
+                replyTriggered = false;
                 pressTimer = setTimeout(openMenu, 650);
             });
             message.addEventListener('pointermove', event => {
                 const deltaX = event.clientX - startX;
                 const deltaY = event.clientY - startY;
                 if (Math.abs(deltaX) > 12 || Math.abs(deltaY) > 12) clearTimeout(pressTimer);
-                if (deltaX > 70 && Math.abs(deltaY) < 45) {
+                if (deltaX > 70 && Math.abs(deltaY) < 45 && !replyTriggered) {
                     swiped = true;
+                    replyTriggered = true;
+                    message.classList.remove('is-replying');
+                    void message.offsetWidth;
+                    message.classList.add('is-replying');
                     prepareReply(message);
                 }
             });

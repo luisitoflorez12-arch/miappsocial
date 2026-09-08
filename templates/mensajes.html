@@ -7,15 +7,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style_new.css') }}">
 </head>
 <body>
-    <header>
+    <header class="messages-header">
         <div class="container">
             <div class="logo">
                 <span class="logo-mark" aria-hidden="true"><span class="globe-lines"></span></span>
                 <span>ComfeSocial</span>
             </div>
             <div class="header-actions">
-                <a href="{{ url_for('home', user_id=user_id) }}" class="btn btn-outline-light">Volver al inicio</a>
-                <a href="{{ url_for('perfil', user_id=user_id, current_user_id=user_id) }}" class="btn btn-light">👤 {{ usuario.usuario }}</a>
+                <a href="{{ url_for('home', user_id=user_id) }}" class="btn btn-outline-light messages-home-button">Volver al inicio</a>
             </div>
         </div>
     </header>
