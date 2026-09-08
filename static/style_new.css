@@ -3388,6 +3388,18 @@ footer p {
     .friend-actions .btn { padding: 0.4rem 0.45rem; font-size: 0.7rem; }
 }
 
+/* Compact mobile composer: preserve room for writing. */
+@media (max-width: 600px) {
+    .chat-form .input-group { grid-template-columns: 28px 28px minmax(0, 1fr) auto; gap: 0.25rem; }
+    .chat-form .chat-image-button { width: 28px; min-width: 28px; height: 34px; font-size: 0.82rem; }
+    .chat-form .input-group .form-control { min-height: 36px; padding: 0.5rem 0.55rem; font-size: 0.82rem; }
+    .chat-form .input-group .btn { min-width: 48px; width: auto; min-height: 34px; padding: 0.45rem 0.4rem; font-size: 0.68rem; }
+    .group-chat-form .input-group { grid-template-columns: 28px 28px minmax(0, 1fr) auto; }
+    .group-chat-form .chat-image-button { width: 28px; min-width: 28px; height: 34px; font-size: 0.82rem; }
+    .group-chat-form .form-control { min-height: 36px; font-size: 0.82rem; }
+    .group-chat-form .btn { min-width: 48px; min-height: 34px; padding: 0.45rem 0.4rem; font-size: 0.68rem; }
+}
+
 @media (max-width: 600px) {
     .messages-page .conversation-item { margin-top: 0.45rem; padding: 0.65rem 0.55rem; }
 }
