@@ -12,12 +12,17 @@
             <div class="chat-container">
                 <!-- Encabezado del chat -->
                 <div class="chat-header">
-                    <a href="{{ url_for('perfil', user_id=receptor.id, current_user_id=emisor.id) }}" class="back-link" style="color: white; text-decoration: none;">
-                        ← Volver al perfil
+                    <a href="{{ url_for('mensajes', user_id=emisor.id) }}" class="back-link">
+                        ← Volver a mis chats
                     </a>
-                    <h4>💬 Chat con {{ receptor.usuario }}</h4>
+                    <h4 class="chat-header-name">💬 Chat con {{ receptor.usuario }}</h4>
                     <small>📱 {{ receptor.telefono }}</small>
                 </div>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category or 'info' }} chat-alert" role="status">{{ message }}</div>
+                    {% endfor %}
+                {% endwith %}
 
                 <!-- Área de mensajes -->
                 <div class="chat-messages" id="mensajesArea">
@@ -45,7 +50,7 @@
                                     {% if m.emisor_id == emisor.id %}
                                         <div class="action-menu message-menu" id="message-menu-{{ m.id }}">
                                             <button type="button" onclick="editMessage({{ m.id }}, {{ m.contenido|tojson }})">Editar mensaje</button>
-                                            <form method="POST" action="{{ url_for('eliminar_mensaje', mensaje_id=m.id) }}" onsubmit="return confirm('¿Eliminar este mensaje?');">
+                                            <form method="POST" action="{{ url_for('eliminar_mensaje', mensaje_id=m.id) }}" onsubmit="return requestConfirmation(this, '¿Eliminar este mensaje?');">
                                                 <button type="submit" class="action-danger">Eliminar mensaje</button>
                                             </form>
                                         </div>
@@ -69,9 +74,13 @@
                             <label class="chat-image-button chat-video-button" for="video-chat" title="Adjuntar video">🎥</label>
                             <input type="file" id="video-chat" name="video" accept="video/mp4,video/webm,video/quicktime,video/ogg" hidden>
                             <input type="text" name="mensaje" class="form-control" placeholder="Escribe tu mensaje...">
-                            <button class="btn btn-primary" type="submit">
+                            <button class="btn btn-primary" type="submit" data-loading-text="Enviando...">
                                 📤 Enviar
                             </button>
+                        </div>
+                        <div id="chat-image-preview" class="chat-image-preview" hidden>
+                            <img id="chat-image-preview-image" src="" alt="Vista previa de la imagen seleccionada">
+                            <button type="button" class="remove-selected-file" onclick="clearSelectedFile()">Quitar imagen</button>
                         </div>
                         <small id="selected-image" class="selected-image">Puedes enviar texto, una foto, un video o combinarlos.</small>
                         <button id="remove-selected-file" class="remove-selected-file" type="button" hidden onclick="clearSelectedFile()">Quitar archivo seleccionado</button>
@@ -81,7 +90,52 @@
         </div>
     </div>
 
+    <div class="confirm-dialog" id="confirm-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="confirm-dialog-card">
+            <h2 id="confirm-title">Confirmar acción</h2>
+            <p id="confirm-message"></p>
+            <div class="confirm-dialog-actions">
+                <button type="button" class="btn btn-light" onclick="closeConfirmation()">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="submitConfirmation()">Continuar</button>
+            </div>
+        </div>
+    </div>
     <script>
+        let pendingForm = null;
+
+        function requestConfirmation(form, message) {
+            pendingForm = form;
+            document.getElementById('confirm-message').textContent = message;
+            document.getElementById('confirm-dialog').hidden = false;
+            return false;
+        }
+
+        function closeConfirmation() {
+            pendingForm = null;
+            document.getElementById('confirm-dialog').hidden = true;
+        }
+
+        function submitConfirmation() {
+            const form = pendingForm;
+            closeConfirmation();
+            if (form) form.submit();
+        }
+
+        document.querySelector('.chat-form').addEventListener('submit', function() {
+            const button = this.querySelector('[data-loading-text]');
+            if (button) {
+                button.disabled = true;
+                button.textContent = button.dataset.loadingText;
+            }
+        });
+
+        document.querySelector('.chat-form input[name="mensaje"]').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                this.form.requestSubmit();
+            }
+        });
+
         // Scroll automático al último mensaje
         setTimeout(function() {
             const area = document.getElementById('mensajesArea');
@@ -96,6 +150,16 @@
         }
 
         document.getElementById('imagen-chat').addEventListener('change', function() {
+            const preview = document.getElementById('chat-image-preview');
+            const previewImage = document.getElementById('chat-image-preview-image');
+            const file = this.files[0];
+            if (file && file.type.startsWith('image/')) {
+                previewImage.src = URL.createObjectURL(file);
+                preview.hidden = false;
+            } else {
+                previewImage.src = '';
+                preview.hidden = true;
+            }
             updateSelectedFile(this, 'Imagen seleccionada');
         });
 
@@ -106,6 +170,8 @@
         function clearSelectedFile() {
             document.getElementById('imagen-chat').value = '';
             document.getElementById('video-chat').value = '';
+            document.getElementById('chat-image-preview-image').src = '';
+            document.getElementById('chat-image-preview').hidden = true;
             updateSelectedFile(document.getElementById('imagen-chat'), 'Archivo seleccionado');
         }
 

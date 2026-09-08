@@ -76,6 +76,10 @@
                             <img id="preview" src="" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
                             <button type="button" class="remove-selected-file" onclick="clearSelectedImage()">Quitar imagen seleccionada</button>
                         </div>
+                        <div id="video-preview-container" class="video-preview-container" hidden>
+                            <video id="video-preview" controls muted></video>
+                            <button type="button" class="remove-selected-file" onclick="clearSelectedVideo()">Quitar video seleccionado</button>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary" style="width: 100%;">
@@ -95,7 +99,8 @@
                     {% if post.autor_id == user_id %}
                         <button class="post-menu-trigger" type="button" aria-label="Opciones de publicación" onclick="toggleMenu('post-menu-{{ post.id }}')">⋮</button>
                         <div class="action-menu" id="post-menu-{{ post.id }}">
-                            <form method="POST" action="{{ url_for('eliminar_post', post_id=post.id) }}" onsubmit="return confirm('¿Eliminar esta publicación?');">
+                            <button type="button" onclick="editPost({{ post.id }}, {{ post.texto|tojson }})">Editar publicación</button>
+                            <form method="POST" action="{{ url_for('eliminar_post', post_id=post.id) }}" onsubmit="return requestConfirmation(this, '¿Eliminar esta publicación?');">
                                 <button type="submit" class="action-danger">Eliminar publicación</button>
                             </form>
                         </div>
@@ -105,12 +110,17 @@
                         {% set post_user = usuarios_dict.get(post.autor) %}
                         {% if post_user %}
                             <a href="{{ url_for('perfil', user_id=post_user.id, current_user_id=user_id) }}" class="post-author">
-                                👤 {{ post.autor }}
+                                {% if post_user.foto_data or post_user.foto %}
+                                    <img src="{{ post_user.foto_data or post_user.foto }}" alt="" class="post-author-avatar">
+                                {% else %}
+                                    <span class="post-author-avatar post-author-avatar-fallback">{{ post.autor[0]|upper }}</span>
+                                {% endif %}
+                                <span>{{ post.autor }}</span>
                             </a>
                         {% else %}
-                            <span class="post-author">👤 {{ post.autor }}</span>
+                            <span class="post-author"><span class="post-author-avatar post-author-avatar-fallback">{{ post.autor[0]|upper }}</span><span>{{ post.autor }}</span></span>
                         {% endif %}
-                        <span class="post-time">{{ post.fecha.strftime('%d/%m/%Y %H:%M') if post.fecha else 'Ahora' }}</span>
+                        <span class="post-time" title="{{ post.fecha.strftime('%d/%m/%Y %H:%M') if post.fecha else 'Ahora' }}">{{ post.fecha|timeago }}</span>
                     </div>
 
                     <!-- Contenido -->
@@ -133,11 +143,11 @@
                     <!-- Botón de like -->
                     <div style="margin-top: 1rem;">
                         {% if post.id in user_likes %}
-                            <a href="/like/{{ post.id }}/{{ user_id }}" class="btn btn-outline-danger liked">
+                            <a href="/like/{{ post.id }}/{{ user_id }}" class="btn btn-outline-danger liked like-button">
                                 ❤️ {{ post.likes_count|length }} Me gusta
                             </a>
                         {% else %}
-                            <a href="/like/{{ post.id }}/{{ user_id }}" class="btn btn-outline-danger">
+                            <a href="/like/{{ post.id }}/{{ user_id }}" class="btn btn-outline-danger like-button">
                                 🤍 {{ post.likes_count|length }} Me gusta
                             </a>
                         {% endif %}
@@ -166,7 +176,37 @@
         {% endif %}
     </div>
 
+    <div class="confirm-dialog" id="confirm-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="confirm-dialog-card">
+            <h2 id="confirm-title">Confirmar eliminación</h2>
+            <p id="confirm-message"></p>
+            <div class="confirm-dialog-actions">
+                <button type="button" class="btn btn-light" onclick="closeConfirmation()">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="submitConfirmation()">Eliminar</button>
+            </div>
+        </div>
+    </div>
     <script>
+        let pendingForm = null;
+
+        function requestConfirmation(form, message) {
+            pendingForm = form;
+            document.getElementById('confirm-message').textContent = message;
+            document.getElementById('confirm-dialog').hidden = false;
+            return false;
+        }
+
+        function closeConfirmation() {
+            pendingForm = null;
+            document.getElementById('confirm-dialog').hidden = true;
+        }
+
+        function submitConfirmation() {
+            const form = pendingForm;
+            closeConfirmation();
+            if (form) form.submit();
+        }
+
         // Preview de imagen
         document.getElementById('imagen').addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -177,6 +217,18 @@
                     document.getElementById('preview-container').style.display = 'block';
                 };
                 reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('video').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('video-preview');
+            const container = document.getElementById('video-preview-container');
+            if (file) {
+                preview.src = URL.createObjectURL(file);
+                container.hidden = false;
+            } else {
+                clearSelectedVideo();
             }
         });
 
@@ -216,6 +268,27 @@
             input.value = '';
             document.getElementById('preview').src = '';
             document.getElementById('preview-container').style.display = 'none';
+        }
+
+        function clearSelectedVideo() {
+            const input = document.getElementById('video');
+            const preview = document.getElementById('video-preview');
+            input.value = '';
+            preview.pause();
+            preview.removeAttribute('src');
+            preview.load();
+            document.getElementById('video-preview-container').hidden = true;
+        }
+
+        function editPost(id, currentContent) {
+            const content = window.prompt('Edita tu publicación:', currentContent || '');
+            if (content === null) return;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/post/${id}/editar`;
+            form.innerHTML = `<input type="hidden" name="contenido" value="${content.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">`;
+            document.body.appendChild(form);
+            form.submit();
         }
 
         function buscarUsuarios() {

@@ -78,6 +78,129 @@
                 </div>
             </div>
         </div>
+
+        <section class="profile-posts" aria-labelledby="profile-posts-title">
+            <div class="profile-posts-heading">
+                <div>
+                    <p class="eyebrow">Actividad pública</p>
+                    <h2 id="profile-posts-title">Publicaciones de {{ usuario.usuario }}</h2>
+                </div>
+                <span class="profile-post-count">{{ posts|length }}</span>
+            </div>
+
+            {% for post in posts %}
+                <article class="post-card pressable-post profile-post" data-menu-target="profile-post-menu-{{ post.id }}">
+                    <div class="card-body">
+                        {% if current_user_id == usuario.id %}
+                            <button class="post-menu-trigger" type="button" aria-label="Opciones de publicación" onclick="toggleMenu('profile-post-menu-{{ post.id }}')">⋮</button>
+                            <div class="action-menu" id="profile-post-menu-{{ post.id }}">
+                                <button type="button" onclick="editProfilePost({{ post.id }}, {{ post.texto|tojson }})">Editar publicación</button>
+                                <form method="POST" action="{{ url_for('eliminar_post', post_id=post.id) }}" onsubmit="return requestConfirmation(this, '¿Eliminar esta publicación?');">
+                                    <button type="submit" class="action-danger">Eliminar publicación</button>
+                                </form>
+                            </div>
+                        {% endif %}
+                        <div class="post-meta">
+                            <span class="post-author">
+                                {% if usuario.foto_data or usuario.foto %}
+                                    <img src="{{ usuario.foto_data or usuario.foto }}" alt="" class="post-author-avatar">
+                                {% else %}
+                                    <span class="post-author-avatar post-author-avatar-fallback">{{ usuario.usuario[0]|upper }}</span>
+                                {% endif %}
+                                <span>{{ usuario.usuario }}</span>
+                            </span>
+                            <span class="post-time" title="{{ post.fecha.strftime('%d/%m/%Y %H:%M') if post.fecha else 'Ahora' }}">{{ post.fecha|timeago }}</span>
+                        </div>
+                        {% if post.texto %}<p class="card-text">{{ post.texto }}</p>{% endif %}
+                        {% if post.imagen %}<img src="{{ url_for('static', filename=post.imagen) }}" alt="Imagen de la publicación" class="post-image">{% endif %}
+                        {% if post.video %}
+                            <video class="post-video" controls preload="metadata">
+                                <source src="{{ url_for('static', filename=post.video) }}">
+                            </video>
+                        {% endif %}
+                        <div class="profile-post-actions">
+                            <a href="{{ url_for('like', post_id=post.id, user_id=current_user_id, return_to='profile') }}" class="btn btn-outline-danger like-button {% if post.id in user_likes %}liked{% endif %}">
+                                {{ '❤️' if post.id in user_likes else '🤍' }} {{ post.likes_count|length }} Me gusta
+                            </a>
+                        </div>
+                        {% if post.comentarios %}
+                            <div class="comments-section">
+                                <h3>Comentarios ({{ post.comentarios|length }})</h3>
+                                {% for comentario in post.comentarios %}
+                                    <div class="comment-item"><strong>{{ comentario.usuario.usuario }}</strong><span>{{ comentario.contenido }}</span></div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <form class="comment-form" method="POST" action="{{ url_for('comentar', post_id=post.id, user_id=current_user_id, return_to='profile') }}">
+                            <input class="form-control" type="text" name="comentario" placeholder="Escribe un comentario..." required>
+                            <button class="btn btn-secondary" type="submit">Comentar</button>
+                        </form>
+                    </div>
+                </article>
+            {% else %}
+                <div class="empty-profile-posts">
+                    <span aria-hidden="true">📝</span>
+                    <h3>Aún no hay publicaciones</h3>
+                    <p>Cuando {{ usuario.usuario }} publique algo, aparecerá aquí.</p>
+                </div>
+            {% endfor %}
+        </section>
     </main>
+    <div class="confirm-dialog" id="confirm-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="confirm-dialog-card">
+            <h2 id="confirm-title">Confirmar eliminación</h2>
+            <p id="confirm-message"></p>
+            <div class="confirm-dialog-actions">
+                <button type="button" class="btn btn-light" onclick="closeConfirmation()">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="submitConfirmation()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let pendingForm = null;
+
+        function requestConfirmation(form, message) {
+            pendingForm = form;
+            document.getElementById('confirm-message').textContent = message;
+            document.getElementById('confirm-dialog').hidden = false;
+            return false;
+        }
+
+        function closeConfirmation() {
+            pendingForm = null;
+            document.getElementById('confirm-dialog').hidden = true;
+        }
+
+        function submitConfirmation() {
+            const form = pendingForm;
+            closeConfirmation();
+            if (form) form.submit();
+        }
+
+        function toggleMenu(id) {
+            document.querySelectorAll('.action-menu.is-open').forEach(menu => {
+                if (menu.id !== id) menu.classList.remove('is-open');
+            });
+            const menu = document.getElementById(id);
+            if (menu) menu.classList.toggle('is-open');
+        }
+
+        function editProfilePost(id, currentContent) {
+            const content = window.prompt('Edita tu publicación:', currentContent || '');
+            if (content === null) return;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/post/${id}/editar`;
+            form.innerHTML = `<input type="hidden" name="contenido" value="${content.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        document.addEventListener('click', event => {
+            if (!event.target.closest('.action-menu, .post-menu-trigger')) {
+                document.querySelectorAll('.action-menu.is-open').forEach(menu => menu.classList.remove('is-open'));
+            }
+        });
+    </script>
 </body>
 </html>

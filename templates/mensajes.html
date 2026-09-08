@@ -21,6 +21,11 @@
     </header>
 
     <main class="container messages-page">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category or 'info' }}" role="status">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
         <div class="messages-heading">
             <div>
                 <p class="eyebrow">Bandeja privada</p>
@@ -34,19 +39,27 @@
         <section class="conversation-list">
             {% if conversaciones %}
                 {% for conversacion in conversaciones %}
-                    <a class="conversation-item" href="{{ url_for('chat', emisor_id=user_id, receptor_id=conversacion.usuario.id) }}">
-                        <span class="conversation-avatar">{{ conversacion.usuario.usuario.replace('@', '')[0]|upper }}</span>
-                        <span class="conversation-content">
-                            <strong>{{ conversacion.usuario.usuario }}</strong>
-                            <span>{{ conversacion.ultimo.contenido }}</span>
-                        </span>
-                        <span class="conversation-meta">
-                            {% if conversacion.nuevos %}
-                                <b class="conversation-unread">{{ conversacion.nuevos }}</b>
-                            {% endif %}
-                            <small>{{ conversacion.ultimo.fecha.strftime('%d/%m') if conversacion.ultimo.fecha else '' }}</small>
-                        </span>
-                    </a>
+                    <div class="conversation-item pressable-conversation {% if conversacion.nuevos %}has-unread{% endif %}" data-menu-target="conversation-menu-{{ conversacion.usuario.id }}" data-href="{{ url_for('chat', emisor_id=user_id, receptor_id=conversacion.usuario.id) }}">
+                        <a class="conversation-link" href="{{ url_for('chat', emisor_id=user_id, receptor_id=conversacion.usuario.id) }}" aria-label="Abrir chat con {{ conversacion.usuario.usuario }}">
+                            <span class="conversation-avatar">{{ conversacion.usuario.usuario.replace('@', '')[0]|upper }}</span>
+                            <span class="conversation-content">
+                                <strong>{{ conversacion.usuario.usuario }}</strong>
+                                <span>{{ conversacion.ultimo.contenido or 'Archivo adjunto' }}</span>
+                            </span>
+                            <span class="conversation-meta">
+                                {% if conversacion.nuevos %}
+                                    <b class="conversation-unread">{{ conversacion.nuevos }}</b>
+                                {% endif %}
+                                <small>{{ conversacion.ultimo.fecha.strftime('%d/%m') if conversacion.ultimo.fecha else '' }}</small>
+                            </span>
+                        </a>
+                        <button type="button" class="conversation-menu-trigger" aria-label="Más opciones" onclick="event.stopPropagation(); toggleMenu('conversation-menu-{{ conversacion.usuario.id }}')">⋮</button>
+                        <div class="action-menu conversation-menu" id="conversation-menu-{{ conversacion.usuario.id }}">
+                            <form method="POST" action="{{ url_for('eliminar_chat', user_id=user_id, partner_id=conversacion.usuario.id) }}" onsubmit="return requestConfirmation(this, '¿Eliminar toda esta conversación?');">
+                                <button type="submit" class="action-danger">Eliminar chat</button>
+                            </form>
+                        </div>
+                    </div>
                 {% endfor %}
             {% else %}
                 <div class="empty-conversations">
@@ -58,5 +71,82 @@
             {% endif %}
         </section>
     </main>
+    <div class="confirm-dialog" id="confirm-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="confirm-dialog-card">
+            <h2 id="confirm-title">Confirmar acción</h2>
+            <p id="confirm-message"></p>
+            <div class="confirm-dialog-actions">
+                <button type="button" class="btn btn-light" onclick="closeConfirmation()">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="submitConfirmation()">Continuar</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let pendingForm = null;
+
+        function requestConfirmation(form, message) {
+            pendingForm = form;
+            document.getElementById('confirm-message').textContent = message;
+            document.getElementById('confirm-dialog').hidden = false;
+            return false;
+        }
+
+        function closeConfirmation() {
+            pendingForm = null;
+            document.getElementById('confirm-dialog').hidden = true;
+        }
+
+        function submitConfirmation() {
+            const form = pendingForm;
+            closeConfirmation();
+            if (form) form.submit();
+        }
+
+        function toggleMenu(id) {
+            document.querySelectorAll('.action-menu.is-open').forEach(menu => {
+                if (menu.id !== id) menu.classList.remove('is-open');
+            });
+            const menu = document.getElementById(id);
+            if (menu) menu.classList.toggle('is-open');
+        }
+
+        document.addEventListener('click', function(event) {
+            const clickedMenu = event.target.closest('.action-menu');
+            const clickedTrigger = event.target.closest('.conversation-menu-trigger');
+            if (!clickedMenu && !clickedTrigger) {
+                document.querySelectorAll('.action-menu.is-open').forEach(menu => menu.classList.remove('is-open'));
+            }
+        });
+
+        document.querySelectorAll('.pressable-conversation').forEach(conversation => {
+            const href = conversation.dataset.href;
+            let pressTimer;
+            let longPressTriggered = false;
+            const openMenu = () => toggleMenu(conversation.dataset.menuTarget);
+
+            conversation.addEventListener('click', function(event) {
+                if (event.target.closest('.conversation-menu-trigger') || event.target.closest('.action-menu')) {
+                    return;
+                }
+                if (longPressTriggered) {
+                    longPressTriggered = false;
+                    return;
+                }
+                if (href) {
+                    window.location.href = href;
+                }
+            });
+
+            conversation.addEventListener('pointerdown', () => {
+                longPressTriggered = false;
+                pressTimer = setTimeout(() => {
+                    longPressTriggered = true;
+                    openMenu();
+                }, 650);
+            });
+            ['pointerup', 'pointerleave', 'pointercancel'].forEach(eventName => conversation.addEventListener(eventName, () => clearTimeout(pressTimer)));
+            conversation.addEventListener('contextmenu', event => { event.preventDefault(); openMenu(); });
+        });
+    </script>
 </body>
 </html>

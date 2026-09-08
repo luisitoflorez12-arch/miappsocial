@@ -10,9 +10,9 @@ from datetime import datetime
 from functools import wraps
 
 app = Flask(__name__)
-app.secret_key = "clave_secreta"
+app.secret_key = os.environ.get("SECRET_KEY", "clave_secreta")
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = False  # Cambiar a True en producción con HTTPS
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', '').lower() == 'true'
 
 # Configuración de uploads
 UPLOAD_FOLDER = 'static/uploads'
@@ -21,8 +21,8 @@ VIDEO_EXTENSIONS = {'mp4', 'webm', 'mov', 'ogg'}
 ALLOWED_EXTENSIONS = IMAGE_EXTENSIONS | VIDEO_EXTENSIONS
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-ADMIN_USERNAME = "ADMIN1"
-ADMIN_PASSWORD = "LDFMLUIS"
+ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "ADMIN1")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "LDFMLUIS")
 
 # Crear carpeta de uploads si no existe
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -32,6 +32,45 @@ def allowed_file(filename):
 
 def file_extension(filename):
     return filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+
+@app.template_filter("timeago")
+def timeago(value):
+    if not value:
+        return "Ahora"
+    seconds = max(0, int((datetime.utcnow() - value).total_seconds()))
+    if seconds < 60:
+        return "Ahora"
+    minutes = seconds // 60
+    if minutes < 60:
+        return f"Hace {minutes} min"
+    hours = minutes // 60
+    if hours < 24:
+        return f"Hace {hours} h"
+    days = hours // 24
+    return f"Hace {days} día{'s' if days != 1 else ''}"
+
+def validate_upload(file, extensions, max_bytes):
+    """Validate an uploaded file before it is saved to disk."""
+    if not file or not file.filename:
+        return False
+
+    extension = file_extension(file.filename)
+    if extension not in extensions:
+        return False
+
+    mime = (file.mimetype or '').lower()
+    allowed_mimes = (
+        {'image/jpeg', 'image/png', 'image/gif', 'image/webp'}
+        if extensions == IMAGE_EXTENSIONS
+        else {'video/mp4', 'video/webm', 'video/quicktime', 'video/ogg'}
+    )
+    if mime and mime not in allowed_mimes:
+        return False
+
+    file.stream.seek(0, os.SEEK_END)
+    size = file.stream.tell()
+    file.stream.seek(0)
+    return size <= max_bytes
 
 # En Render, DATABASE_URL debe apuntar a una base PostgreSQL persistente.
 # Si no existe, se conserva SQLite para desarrollo local.
@@ -249,6 +288,9 @@ def registro():
 
 @app.route("/home/<int:user_id>")
 def home(user_id):
+    if session.get('user_id') != user_id:
+        flash("Inicia sesión para continuar.", "danger")
+        return redirect(url_for("login"))
     user = Usuario.query.get(user_id)
     if user:
         posts = Post.query.order_by(Post.fecha.desc()).all()
@@ -269,6 +311,9 @@ def home(user_id):
 
 @app.route("/add/<int:user_id>", methods=["POST"])
 def add_post(user_id):
+    if session.get('user_id') != user_id:
+        flash("No puedes publicar desde otra cuenta.", "danger")
+        return redirect(url_for("login"))
     user = Usuario.query.get(user_id)
     if user:
         texto = request.form.get("comentario", "").strip()
@@ -278,21 +323,23 @@ def add_post(user_id):
         # Manejar upload de imagen
         if 'imagen' in request.files:
             file = request.files['imagen']
-            extension = file_extension(file.filename) if file and file.filename else ''
-            if file and file.filename and extension in IMAGE_EXTENSIONS:
+            if file and file.filename and validate_upload(file, IMAGE_EXTENSIONS, 8 * 1024 * 1024):
                 filename = secure_filename(f"{user.id}_{datetime.now().timestamp()}_{file.filename}")
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(filepath)
                 imagen = f"uploads/{filename}"
+            elif file and file.filename:
+                flash("La imagen debe ser válida y no superar 8 MB.", "danger")
 
         if 'video' in request.files:
             file = request.files['video']
-            extension = file_extension(file.filename) if file and file.filename else ''
-            if file and file.filename and extension in VIDEO_EXTENSIONS:
+            if file and file.filename and validate_upload(file, VIDEO_EXTENSIONS, 16 * 1024 * 1024):
                 filename = secure_filename(f"video_{user.id}_{datetime.now().timestamp()}_{file.filename}")
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(filepath)
                 video = f"uploads/{filename}"
+            elif file and file.filename:
+                flash("El video debe ser válido y no superar 16 MB.", "danger")
         
         if texto or imagen or video:
             nuevo_post = Post(texto=texto, imagen=imagen, video=video,
@@ -325,18 +372,43 @@ def eliminar_post(post_id):
     flash("Publicación eliminada.", "success")
     return redirect(url_for("home", user_id=user_id))
 
+@app.route("/post/<int:post_id>/editar", methods=["POST"])
+def editar_post(post_id):
+    post = Post.query.get(post_id)
+    user_id = session.get('user_id')
+    if not post or post.autor_id != user_id:
+        flash("Solo puedes editar tus propias publicaciones.", "danger")
+        return redirect(url_for("home", user_id=user_id)) if user_id else redirect(url_for("login"))
+
+    contenido = request.form.get("contenido", "").strip()
+    if contenido or post.imagen or post.video:
+        post.texto = contenido
+        db.session.commit()
+        flash("Publicación actualizada.", "success")
+    else:
+        flash("La publicación no puede quedar vacía.", "danger")
+    return redirect(url_for("home", user_id=user_id))
+
 @app.route("/comentar/<int:post_id>/<int:user_id>", methods=["POST"])
 def comentar(post_id, user_id):
+    if session.get('user_id') != user_id:
+        flash("No puedes comentar desde otra cuenta.", "danger")
+        return redirect(url_for("login"))
     contenido = request.form.get("comentario", "").strip()
     post = Post.query.get(post_id)
     user = Usuario.query.get(user_id)
     if post and user and contenido:
         db.session.add(Comentario(contenido=contenido, usuario_id=user.id, post_id=post.id))
         db.session.commit()
+    if request.args.get('return_to') == 'profile' and post:
+        return redirect(url_for("perfil", user_id=post.autor_id, current_user_id=user_id))
     return redirect(url_for("home", user_id=user_id))
 
 @app.route("/like/<int:post_id>/<int:user_id>")
 def like(post_id, user_id):
+    if session.get('user_id') != user_id:
+        flash("No puedes reaccionar desde otra cuenta.", "danger")
+        return redirect(url_for("login"))
     post = Post.query.get(post_id)
     user = Usuario.query.get(user_id)
     
@@ -354,11 +426,16 @@ def like(post_id, user_id):
             flash("Post likeado!")
         
         db.session.commit()
+    if request.args.get('return_to') == 'profile' and post:
+        return redirect(url_for("perfil", user_id=post.autor_id, current_user_id=user_id))
     return redirect(url_for("home", user_id=user_id))
 
 # Ruta para ver perfil
 @app.route("/perfil/<int:user_id>/<int:current_user_id>")
 def perfil(user_id, current_user_id):
+    if session.get('user_id') != current_user_id:
+        flash("Inicia sesión para ver perfiles.", "danger")
+        return redirect(url_for("login"))
     usuario = Usuario.query.get(user_id)
     if usuario:
         siguiendo = Seguidor.query.filter_by(
@@ -369,10 +446,13 @@ def perfil(user_id, current_user_id):
         ).first() is not None
         seguidores_count = Seguidor.query.filter_by(seguido_id=user_id).count()
         seguidos_count = Seguidor.query.filter_by(seguidor_id=user_id).count()
+        posts = Post.query.filter_by(autor_id=user_id).order_by(Post.fecha.desc()).all()
+        user_likes = {like.post_id for like in Like.query.filter_by(usuario_id=current_user_id).all()}
         return render_template(
             "perfil.html", usuario=usuario, current_user_id=current_user_id,
             siguiendo=siguiendo, bloqueado=bloqueado,
             seguidores_count=seguidores_count, seguidos_count=seguidos_count,
+            posts=posts, user_likes=user_likes,
         )
     else:
         flash("Usuario no encontrado.")
@@ -380,6 +460,9 @@ def perfil(user_id, current_user_id):
 
 @app.route("/seguir/<int:target_id>/<int:current_user_id>", methods=["POST"])
 def seguir(target_id, current_user_id):
+    if session.get('user_id') != current_user_id:
+        flash("Inicia sesión para seguir usuarios.", "danger")
+        return redirect(url_for("login"))
     if target_id != current_user_id:
         existing = Seguidor.query.filter_by(
             seguidor_id=current_user_id, seguido_id=target_id
@@ -399,6 +482,9 @@ def seguir(target_id, current_user_id):
 
 @app.route("/bloquear/<int:target_id>/<int:current_user_id>", methods=["POST"])
 def bloquear(target_id, current_user_id):
+    if session.get('user_id') != current_user_id:
+        flash("Inicia sesión para bloquear usuarios.", "danger")
+        return redirect(url_for("login"))
     if target_id != current_user_id:
         existing = Bloqueo.query.filter_by(
             bloqueador_id=current_user_id, bloqueado_id=target_id
@@ -418,6 +504,9 @@ def bloquear(target_id, current_user_id):
 
 @app.route("/seguidores/<int:user_id>/<int:current_user_id>")
 def seguidores(user_id, current_user_id):
+    if session.get('user_id') != current_user_id:
+        flash("Inicia sesión para ver seguidores.", "danger")
+        return redirect(url_for("login"))
     usuario = Usuario.query.get(user_id)
     if not usuario:
         flash("Usuario no encontrado.")
@@ -431,6 +520,9 @@ def seguidores(user_id, current_user_id):
 
 @app.route("/seguidos/<int:user_id>/<int:current_user_id>")
 def seguidos(user_id, current_user_id):
+    if session.get('user_id') != current_user_id:
+        flash("Inicia sesión para ver amigos agregados.", "danger")
+        return redirect(url_for("login"))
     usuario = Usuario.query.get(user_id)
     if not usuario:
         flash("Usuario no encontrado.")
@@ -487,6 +579,9 @@ def admin_eliminar():
 # Ruta para editar perfil
 @app.route("/editar_perfil/<int:user_id>", methods=["GET", "POST"])
 def editar_perfil(user_id):
+    if session.get('user_id') != user_id:
+        flash("No puedes editar otro perfil.", "danger")
+        return redirect(url_for("login"))
     usuario = Usuario.query.get(user_id)
     if not usuario:
         flash("Usuario no encontrado.")
@@ -497,15 +592,11 @@ def editar_perfil(user_id):
         usuario.bio = request.form.get("bio", usuario.bio)
         foto = request.files.get("foto")
         if foto and foto.filename:
-            extension = file_extension(foto.filename)
-            if extension not in IMAGE_EXTENSIONS:
+            if not validate_upload(foto, IMAGE_EXTENSIONS, 4 * 1024 * 1024):
                 flash("La foto debe ser PNG, JPG, JPEG, GIF o WEBP.")
                 return redirect(url_for("editar_perfil", user_id=user_id))
             contenido = foto.read()
-            if len(contenido) > 4 * 1024 * 1024:
-                flash("La foto de perfil no puede superar 4 MB.")
-                return redirect(url_for("editar_perfil", user_id=user_id))
-            mime = foto.mimetype or f"image/{extension}"
+            mime = foto.mimetype or "image/jpeg"
             usuario.foto_data = f"data:{mime};base64,{base64.b64encode(contenido).decode('ascii')}"
         
         try:
@@ -521,6 +612,9 @@ def editar_perfil(user_id):
 # Ruta de chat privado
 @app.route("/chat/<int:emisor_id>/<int:receptor_id>", methods=["GET", "POST"])
 def chat(emisor_id, receptor_id):
+    if session.get('user_id') != emisor_id:
+        flash("Inicia sesión para abrir este chat.", "danger")
+        return redirect(url_for("login"))
     emisor = Usuario.query.get(emisor_id)
     receptor = Usuario.query.get(receptor_id)
 
@@ -536,8 +630,8 @@ def chat(emisor_id, receptor_id):
         archivo_video = request.files.get("video")
 
         if archivo and archivo.filename:
-            if not allowed_file(archivo.filename):
-                flash("El formato de la imagen no está permitido.")
+            if not validate_upload(archivo, IMAGE_EXTENSIONS, 8 * 1024 * 1024):
+                flash("La imagen debe ser válida y no superar 8 MB.", "danger")
                 return redirect(url_for("chat", emisor_id=emisor.id, receptor_id=receptor.id))
 
             filename = secure_filename(
@@ -547,8 +641,8 @@ def chat(emisor_id, receptor_id):
             imagen = f"uploads/{filename}"
 
         if archivo_video and archivo_video.filename:
-            if file_extension(archivo_video.filename) not in VIDEO_EXTENSIONS:
-                flash("El formato del video no está permitido.")
+            if not validate_upload(archivo_video, VIDEO_EXTENSIONS, 16 * 1024 * 1024):
+                flash("El video debe ser válido y no superar 16 MB.", "danger")
                 return redirect(url_for("chat", emisor_id=emisor.id, receptor_id=receptor.id))
             filename = secure_filename(
                 f"chat_video_{emisor.id}_{receptor.id}_{datetime.now().timestamp()}_{archivo_video.filename}"
@@ -601,6 +695,23 @@ def eliminar_mensaje(mensaje_id):
     db.session.commit()
     return redirect(url_for("chat", emisor_id=user_id, receptor_id=receptor_id))
 
+@app.route("/chat/<int:user_id>/<int:partner_id>/eliminar", methods=["POST"])
+def eliminar_chat(user_id, partner_id):
+    if session.get('user_id') != user_id:
+        flash("No puedes eliminar conversaciones de otra cuenta.", "danger")
+        return redirect(url_for("login"))
+    if not user_id or not partner_id:
+        flash("No se pudo eliminar la conversación.", "danger")
+        return redirect(url_for("login"))
+
+    Mensaje.query.filter(
+        ((Mensaje.emisor_id == user_id) & (Mensaje.receptor_id == partner_id)) |
+        ((Mensaje.emisor_id == partner_id) & (Mensaje.receptor_id == user_id))
+    ).delete(synchronize_session=False)
+    db.session.commit()
+    flash("Conversación eliminada.", "success")
+    return redirect(url_for("mensajes", user_id=user_id))
+
 @app.route("/mensaje/<int:mensaje_id>/editar", methods=["POST"])
 def editar_mensaje(mensaje_id):
     mensaje = Mensaje.query.get(mensaje_id)
@@ -617,6 +728,9 @@ def editar_mensaje(mensaje_id):
 
 @app.route("/mensajes/<int:user_id>")
 def mensajes(user_id):
+    if session.get('user_id') != user_id:
+        flash("Inicia sesión para ver tus mensajes.", "danger")
+        return redirect(url_for("login"))
     usuario = Usuario.query.get(user_id)
     if not usuario:
         flash("Usuario no encontrado.")

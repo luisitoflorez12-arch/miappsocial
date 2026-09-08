@@ -7,17 +7,123 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style_new.css') }}">
 </head>
 <body>
-    <header><div class="container admin-header"><div class="logo"><span class="logo-mark">A</span><span>Panel Admin</span></div><a class="btn btn-outline-light" href="{{ url_for('logout') }}">Cerrar sesión</a></div></header>
+    <header><div class="container admin-header"><div class="logo"><span class="logo-mark" aria-hidden="true">A</span><span>Panel Admin</span></div><a class="btn btn-outline-light" href="{{ url_for('logout') }}">Cerrar sesión</a></div></header>
     <main class="container admin-page">
-        <h1>Administrar contenido</h1>
-        <p class="admin-warning">Selecciona los elementos que deseas eliminar. Esta acción no se puede deshacer.</p>
+        <div class="admin-heading">
+            <div>
+                <p class="eyebrow">Control del sistema</p>
+                <h1>Administrar contenido</h1>
+                <p class="admin-warning">Revisa y elimina contenido desde un solo lugar.</p>
+            </div>
+            <span class="admin-status"><span aria-hidden="true"></span> Sesión protegida</span>
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category or 'info' }}" role="status">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+        <div class="admin-summary" aria-label="Resumen del contenido">
+            <div class="admin-stat"><strong>{{ usuarios|length }}</strong><span>Usuarios</span></div>
+            <div class="admin-stat"><strong>{{ posts|length }}</strong><span>Publicaciones</span></div>
+            <div class="admin-stat"><strong>{{ comentarios|length }}</strong><span>Comentarios</span></div>
+            <div class="admin-stat"><strong>{{ mensajes|length }}</strong><span>Mensajes</span></div>
+        </div>
+        <div class="admin-toolbar">
+            <label class="admin-search" for="admin-filter">
+                <span aria-hidden="true">⌕</span>
+                <input id="admin-filter" type="search" placeholder="Buscar en el panel..." autocomplete="off">
+            </label>
+            <span class="admin-selection" id="admin-selection">0 seleccionados</span>
+        </div>
         <form method="POST" action="{{ url_for('admin_eliminar') }}">
-            <section class="admin-section"><h2>Usuarios</h2>{% for item in usuarios %}<label class="admin-row"><input type="checkbox" name="user_ids" value="{{ item.id }}"><span><strong>{{ item.usuario }}</strong><small>{{ item.nombre or item.telefono }}</small></span></label>{% else %}<p>No hay usuarios.</p>{% endfor %}</section>
-            <section class="admin-section"><h2>Publicaciones</h2>{% for item in posts %}<label class="admin-row"><input type="checkbox" name="post_ids" value="{{ item.id }}"><span><strong>#{{ item.id }} · {{ item.autor }}</strong><small>{{ item.texto[:100] }}</small></span></label>{% else %}<p>No hay publicaciones.</p>{% endfor %}</section>
-            <section class="admin-section"><h2>Comentarios</h2>{% for item in comentarios %}<label class="admin-row"><input type="checkbox" name="comment_ids" value="{{ item.id }}"><span><strong>#{{ item.id }} · {{ item.usuario.usuario }}</strong><small>{{ item.contenido[:100] }}</small></span></label>{% else %}<p>No hay comentarios.</p>{% endfor %}</section>
-            <section class="admin-section"><h2>Chats</h2>{% for item in mensajes %}<label class="admin-row"><input type="checkbox" name="message_ids" value="{{ item.id }}"><span><strong>#{{ item.id }} · {{ item.emisor.usuario }} → {{ item.receptor.usuario }}</strong><small>{{ item.contenido[:100] or 'Archivo adjunto' }}</small></span></label>{% else %}<p>No hay mensajes.</p>{% endfor %}</section>
-            <button class="btn btn-outline-danger admin-delete" type="submit" onclick="return confirm('¿Eliminar los elementos seleccionados?');">Eliminar seleccionados</button>
+            <div class="admin-grid">
+                <section class="admin-section" data-admin-section>
+                    <div class="admin-section-heading"><h2>Usuarios <span>{{ usuarios|length }}</span></h2><label><input type="checkbox" data-select-section> Todos</label></div>
+                    {% for item in usuarios %}<label class="admin-row" data-admin-row><input type="checkbox" name="user_ids" value="{{ item.id }}"><span><strong>{{ item.usuario }}</strong><small>{{ item.nombre or item.telefono }}</small></span></label>{% else %}<p class="admin-empty">No hay usuarios.</p>{% endfor %}
+                </section>
+                <section class="admin-section" data-admin-section>
+                    <div class="admin-section-heading"><h2>Publicaciones <span>{{ posts|length }}</span></h2><label><input type="checkbox" data-select-section> Todos</label></div>
+                    {% for item in posts %}<label class="admin-row" data-admin-row><input type="checkbox" name="post_ids" value="{{ item.id }}"><span><strong>#{{ item.id }} · {{ item.autor }}</strong><small>{{ item.texto[:100] }}</small></span></label>{% else %}<p class="admin-empty">No hay publicaciones.</p>{% endfor %}
+                </section>
+                <section class="admin-section" data-admin-section>
+                    <div class="admin-section-heading"><h2>Comentarios <span>{{ comentarios|length }}</span></h2><label><input type="checkbox" data-select-section> Todos</label></div>
+                    {% for item in comentarios %}<label class="admin-row" data-admin-row><input type="checkbox" name="comment_ids" value="{{ item.id }}"><span><strong>#{{ item.id }} · {{ item.usuario.usuario }}</strong><small>{{ item.contenido[:100] }}</small></span></label>{% else %}<p class="admin-empty">No hay comentarios.</p>{% endfor %}
+                </section>
+                <section class="admin-section" data-admin-section>
+                    <div class="admin-section-heading"><h2>Chats <span>{{ mensajes|length }}</span></h2><label><input type="checkbox" data-select-section> Todos</label></div>
+                    {% for item in mensajes %}<label class="admin-row" data-admin-row><input type="checkbox" name="message_ids" value="{{ item.id }}"><span><strong>#{{ item.id }} · {{ item.emisor.usuario }} → {{ item.receptor.usuario }}</strong><small>{{ item.contenido[:100] or 'Archivo adjunto' }}</small></span></label>{% else %}<p class="admin-empty">No hay mensajes.</p>{% endfor %}
+                </section>
+            </div>
+            <button class="btn btn-outline-danger admin-delete" type="submit" disabled>Eliminar seleccionados</button>
         </form>
     </main>
+    <div class="confirm-dialog" id="confirm-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="confirm-dialog-card">
+            <h2 id="confirm-title">Confirmar eliminación</h2>
+            <p id="confirm-message"></p>
+            <div class="confirm-dialog-actions">
+                <button type="button" class="btn btn-light" onclick="closeConfirmation()">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="submitConfirmation()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let pendingForm = null;
+
+        function requestConfirmation(form, message) {
+            pendingForm = form;
+            document.getElementById('confirm-message').textContent = message;
+            document.getElementById('confirm-dialog').hidden = false;
+            return false;
+        }
+
+        function closeConfirmation() {
+            pendingForm = null;
+            document.getElementById('confirm-dialog').hidden = true;
+        }
+
+        function submitConfirmation() {
+            const form = pendingForm;
+            closeConfirmation();
+            if (form) form.submit();
+        }
+
+        const filter = document.getElementById('admin-filter');
+        const selection = document.getElementById('admin-selection');
+        const deleteButton = document.querySelector('.admin-delete');
+        const checkboxes = () => [...document.querySelectorAll('.admin-row input[type="checkbox"]')];
+
+        function updateSelection() {
+            const selected = checkboxes().filter(input => input.checked).length;
+            selection.textContent = `${selected} seleccionado${selected === 1 ? '' : 's'}`;
+            deleteButton.disabled = selected === 0;
+        }
+
+        document.querySelectorAll('[data-select-section]').forEach(selectAll => {
+            selectAll.addEventListener('change', () => {
+                const section = selectAll.closest('[data-admin-section]');
+                section.querySelectorAll('.admin-row input').forEach(input => {
+                    if (!input.closest('.admin-row').hidden) input.checked = selectAll.checked;
+                });
+                updateSelection();
+            });
+        });
+
+        document.querySelectorAll('.admin-row input').forEach(input => input.addEventListener('change', updateSelection));
+        filter.addEventListener('input', () => {
+            const query = filter.value.trim().toLowerCase();
+            document.querySelectorAll('[data-admin-section]').forEach(section => {
+                section.querySelectorAll('.admin-row').forEach(row => {
+                    row.hidden = query && !row.textContent.toLowerCase().includes(query);
+                });
+            });
+        });
+
+        document.querySelector('form').addEventListener('submit', event => {
+            event.preventDefault();
+            requestConfirmation(event.currentTarget, '¿Eliminar los elementos seleccionados? Esta acción no se puede deshacer.');
+        });
+        updateSelection();
+    </script>
 </body>
 </html>
