@@ -170,6 +170,7 @@ header .logo img {
 }
 
 .home-toolbar {
+    position: relative;
     width: fit-content;
     min-width: min(100% - 1.5rem, 560px);
     margin: 0 auto;
@@ -220,8 +221,8 @@ header .logo img {
 
 .header-search-panel {
     position: absolute;
-    top: calc(100% + 0.6rem);
-    right: 0;
+    top: 50%;
+    right: calc(100% + 0.45rem);
     z-index: 1100;
     display: flex;
     width: min(330px, calc(100vw - 2rem));
@@ -230,6 +231,7 @@ header .logo img {
     border-radius: 12px;
     background: white;
     box-shadow: 0 12px 28px rgba(0, 34, 85, 0.2);
+    transform: translateY(-50%);
 }
 
 .header-search-panel[hidden] {
@@ -250,7 +252,8 @@ header .logo img {
 }
 
 .home-header .search-results {
-    top: calc(100% + 3.8rem);
+    top: calc(100% + 0.6rem);
+    right: 0;
 }
 
 .logout-button {
@@ -267,6 +270,10 @@ header .logo img {
     font-size: 1rem;
     text-decoration: none;
     white-space: nowrap;
+}
+
+.home-tools .logout-button {
+    align-self: center;
 }
 
 .logout-button:hover,
@@ -2545,6 +2552,42 @@ footer p {
 @media (max-width: 480px) {
     body {
         overflow-x: hidden;
+    }
+
+    .home-header {
+        padding: 0.55rem 0;
+    }
+
+    .home-toolbar {
+        width: calc(100% - 1rem);
+        min-width: 0;
+        padding: 0.45rem 0.6rem !important;
+    }
+
+    .home-toolbar .profile-avatar-link {
+        width: 38px;
+        height: 38px;
+        flex-basis: 38px;
+    }
+
+    .home-tools {
+        gap: 0.2rem;
+    }
+
+    .home-tools .search-toggle {
+        width: 34px;
+        height: 34px;
+        font-size: 1.3rem;
+    }
+
+    .home-tools .logout-button {
+        width: 34px;
+        min-height: 28px;
+    }
+
+    .home-tools .header-search-panel {
+        width: min(210px, calc(100vw - 6rem));
+        padding: 0.35rem;
     }
 
     .profile-page {
