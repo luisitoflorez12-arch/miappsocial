@@ -164,13 +164,17 @@
 
         function toggleFloatingHome() {
             if (!floatingHome) return;
-            const shouldShow = window.scrollY > 80;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            const shouldShow = scrollTop > 90;
             floatingHome.classList.toggle('is-visible', shouldShow);
             floatingHome.setAttribute('aria-hidden', String(!shouldShow));
         }
 
-        toggleFloatingHome();
-        window.addEventListener('scroll', toggleFloatingHome, { passive: true });
+        if (floatingHome) {
+            toggleFloatingHome();
+            window.addEventListener('scroll', toggleFloatingHome, { passive: true });
+            window.addEventListener('touchmove', toggleFloatingHome, { passive: true });
+        }
 
         let pendingForm = null;
 

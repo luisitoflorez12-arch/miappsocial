@@ -179,21 +179,21 @@
 
         function updateComposerPosition() {
             if (!chatInputArea || !chatPage || window.innerWidth > 600) return;
-            if (!window.visualViewport) {
-                chatPage.classList.remove('keyboard-open');
-                chatInputArea.style.transform = '';
-                return;
-            }
 
-            const keyboardOffset = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
-            const shouldLift = keyboardOffset > 28;
+            const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            const keyboardGap = Math.max(0, window.innerHeight - viewportHeight - 18);
+            const shouldLift = keyboardGap > 70 && document.activeElement === chatInputField;
+
             chatPage.classList.toggle('keyboard-open', shouldLift);
-            chatInputArea.style.transform = shouldLift ? `translateY(-${Math.min(keyboardOffset, 110)}px)` : '';
 
             if (shouldLift) {
+                chatInputArea.style.transform = `translateY(-${Math.min(keyboardGap, 110)}px)`;
                 setTimeout(() => {
                     chatInputArea.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 }, 120);
+            } else {
+                chatInputArea.style.transform = 'translateY(18vh)';
+                chatPage.classList.remove('keyboard-open');
             }
         }
 
@@ -206,6 +206,7 @@
             chatPage?.classList.add('is-typing');
             setTimeout(() => {
                 if (window.innerWidth <= 600) {
+                    updateComposerPosition();
                     chatInputArea?.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 }
             }, 120);
@@ -213,10 +214,15 @@
 
         chatInputField?.addEventListener('blur', () => {
             chatPage?.classList.remove('is-typing');
+            chatPage?.classList.remove('keyboard-open');
             if (window.innerWidth <= 600) {
-                chatInputArea.style.transform = '';
+                chatInputArea.style.transform = 'translateY(18vh)';
             }
         });
+
+        if (window.innerWidth <= 600) {
+            chatInputArea.style.transform = 'translateY(18vh)';
+        }
 
         // Scroll automático al último mensaje
         setTimeout(function() {

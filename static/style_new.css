@@ -2155,9 +2155,18 @@ header { background: #0d1b2a; }
     .chat-container { min-height: 100dvh; border-radius: 0; border-left: 0; border-right: 0; }
     .chat-header { min-height: 64px; padding: 0.75rem; position: sticky; top: 0; z-index: 4; }
     .chat-messages { height: calc(100dvh - 138px); min-height: 0; padding: 0.9rem 0.7rem; }
-    .chat-input-area { position: sticky; bottom: 0; padding: 0.65rem; z-index: 20; }
+    .chat-input-area {
+        position: sticky;
+        bottom: 0;
+        padding: 0.65rem;
+        z-index: 20;
+        transition: transform 0.25s ease;
+        transform: translateY(18vh);
+    }
     .chat-page.is-typing .chat-input-area,
-    .chat-page.keyboard-open .chat-input-area { transform: translateY(-74px); }
+    .chat-page.keyboard-open .chat-input-area {
+        transform: translateY(-74px);
+    }
     .chat-form .input-group { gap: 0.4rem; }
     .chat-form .input-group .btn { min-width: 74px; padding: 0.65rem 0.5rem; }
     .chat-form .form-control { min-width: 0; min-height: 42px; }
