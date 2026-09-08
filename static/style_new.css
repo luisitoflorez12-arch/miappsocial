@@ -2069,6 +2069,20 @@ header { background: #0d1b2a; }
 .messages-heading h1, .group-create-page h1, .group-create-intro { color: #edf2f7; }
 .eyebrow { color: #62b2ff; }
 .messages-heading-actions { display: flex; align-items: center; gap: 0.8rem; }
+.notifications-link { position: relative; display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: #183452; color: #b9ddff; font: 1rem/1 'Segoe UI', sans-serif; text-decoration: none; }
+.notifications-link:hover { background: #1877f2; color: white; }
+.notifications-link span { position: absolute; top: -5px; right: -5px; display: grid; min-width: 18px; height: 18px; place-items: center; padding: 0 0.25rem; border: 2px solid #0d1b2a; border-radius: 999px; background: #e53935; color: white; font-size: 0.65rem; font-weight: 800; }
+.notifications-page { max-width: 760px; padding-top: 3rem; padding-bottom: 3rem; }
+.notifications-page h1 { margin: 0 0 1.5rem; color: #edf2f7; font-size: 2rem; }
+.notification-list { display: grid; gap: 0.65rem; }
+.notification-item { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 0.8rem; padding: 0.9rem 1rem; border: 1px solid #2b3b50; border-radius: 8px; background: #151d28; }
+.notification-item.is-new { border-left: 3px solid #1877f2; background: #142338; }
+.notification-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: #183452; color: #76c2ff; font: 700 1.15rem 'Segoe UI', sans-serif; }
+.notification-item div { min-width: 0; }
+.notification-item strong { color: #edf2f7; font: 600 0.9rem 'Segoe UI', sans-serif; }
+.notification-item p { margin: 0.15rem 0; color: #c2cfdd; font: 0.88rem/1.35 'Segoe UI', sans-serif; overflow-wrap: anywhere; }
+.notification-item small { color: #8d9bb0; font: 0.75rem 'Segoe UI', sans-serif; }
+.notification-item .notification-link { padding: 0.35rem 0.55rem; border: 1px solid #40536c; border-radius: 5px; color: #8dcbff; font: 0.75rem 'Segoe UI', sans-serif; }
 .conversation-item, .empty-conversations { background: #151d28; border-color: #2b3b50; color: #edf2f7; }
 .conversation-item:hover { background: #19283a; border-color: #42a5f5; }
 .conversation-item.has-unread { background: #142338; border-left-color: #42a5f5; }
@@ -2198,6 +2212,12 @@ header { background: #0d1b2a; }
 
     .messages-fab { width: 52px; height: 52px; right: 0.8rem; bottom: 0.8rem; }
     .messages-fab-icon { font-size: 1.3rem; }
+    .notifications-page { padding: 1.5rem 0.75rem 3rem; }
+    .notifications-page h1 { font-size: 1.45rem; line-height: 1.2; }
+    .notification-item { grid-template-columns: 34px minmax(0, 1fr); gap: 0.6rem; padding: 0.75rem; }
+    .notification-icon { width: 32px; height: 32px; font-size: 0.95rem; }
+    .notification-item .notification-link { grid-column: 2; justify-self: start; }
+    .notifications-link { width: 34px; height: 34px; flex: 0 0 34px; }
 }
 
 @media (max-width: 600px) {

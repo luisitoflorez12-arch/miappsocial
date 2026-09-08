@@ -12,6 +12,7 @@
             <a href="{{ url_for('home', user_id=user_id) }}" class="messages-back-button" aria-label="Volver al inicio" title="Volver al inicio">←</a>
             <strong class="messages-brand">ChatSocial</strong>
             <div class="header-actions">
+                <a class="notifications-link" href="{{ url_for('notificaciones', user_id=user_id) }}" aria-label="Abrir notificaciones" title="Notificaciones">🔔{% if notification_count %}<span>{{ notification_count }}</span>{% endif %}</a>
                 <label class="conversation-search" for="conversation-search">
                     <span aria-hidden="true">⌕</span>
                     <input type="search" id="conversation-search" placeholder="Buscar chats" autocomplete="off" aria-label="Buscar chats">

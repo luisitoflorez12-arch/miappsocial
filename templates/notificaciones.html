@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificaciones - ComfeSocial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_new.css') }}">
+</head>
+<body>
+    <header class="messages-header">
+        <div class="container messages-toolbar">
+            <a href="{{ url_for('home', user_id=user_id) }}" class="messages-back-button" aria-label="Volver al inicio">←</a>
+            <strong class="messages-brand">Notificaciones</strong>
+        </div>
+    </header>
+    <main class="container notifications-page">
+        <p class="eyebrow">Actividad reciente</p>
+        <h1>Lo que ocurre en tu comunidad</h1>
+        <section class="notification-list">
+            {% for item in notificaciones %}
+                <article class="notification-item {% if not item.leida %}is-new{% endif %}">
+                    <span class="notification-icon">{% if item.tipo == 'like' %}♥{% elif item.tipo == 'seguidor' %}＋{% elif item.tipo == 'mencion' %}@{% else %}◌{% endif %}</span>
+                    <div><strong>{{ item.actor.usuario if item.actor else 'ComfeSocial' }}</strong><p>{{ item.texto }}</p><small>{{ item.fecha|timeago }}</small></div>
+                    {% if item.post_id %}<a class="notification-link" href="{{ url_for('home', user_id=user_id) }}" aria-label="Ver publicación">Ver</a>{% endif %}
+                </article>
+            {% else %}
+                <div class="empty-conversations"><span class="empty-chat-icon">🔔</span><h2>No tienes notificaciones</h2><p>Cuando haya actividad en tu cuenta aparecerá aquí.</p></div>
+            {% endfor %}
+        </section>
+    </main>
+</body>
+</html>

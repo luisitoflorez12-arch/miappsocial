@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
 import base64
+import re
 from datetime import datetime
 from functools import wraps
 
@@ -175,6 +176,43 @@ class Bloqueo(db.Model):
     fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     __table_args__ = (db.UniqueConstraint('bloqueador_id', 'bloqueado_id', name='unique_bloqueo'),)
 
+class Notificacion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    actor_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=True)
+    tipo = db.Column(db.String(30), nullable=False)
+    texto = db.Column(db.String(255), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=True)
+    comentario_id = db.Column(db.Integer, db.ForeignKey('comentario.id'), nullable=True)
+    leida = db.Column(db.Boolean, default=False, nullable=False)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    usuario = db.relationship('Usuario', foreign_keys=[usuario_id])
+    actor = db.relationship('Usuario', foreign_keys=[actor_id])
+
+def usuarios_mencionados(texto, excluir_id=None):
+    nombres = {nombre.lower() for nombre in re.findall(r'@([A-Za-z0-9_.-]+)', texto or '')}
+    if not nombres:
+        return []
+    usuarios = Usuario.query.all()
+    return [usuario for usuario in usuarios if usuario.usuario.lower() in nombres and usuario.id != excluir_id]
+
+def crear_notificacion(usuario_id, tipo, texto, actor_id=None, post_id=None, comentario_id=None):
+    if not usuario_id or usuario_id == actor_id:
+        return
+    db.session.add(Notificacion(
+        usuario_id=usuario_id, actor_id=actor_id, tipo=tipo, texto=texto,
+        post_id=post_id, comentario_id=comentario_id,
+    ))
+
+def notificar_menciones(texto, actor_id, tipo, post_id=None, comentario_id=None, destinatarios_ids=None):
+    for usuario in usuarios_mencionados(texto, excluir_id=actor_id):
+        if destinatarios_ids is not None and usuario.id not in destinatarios_ids:
+            continue
+        crear_notificacion(
+            usuario.id, tipo, f"{session.get('usuario', 'Alguien')} te mencionó.",
+            actor_id=actor_id, post_id=post_id, comentario_id=comentario_id,
+        )
+
 # Crear tablas si no existen
 with app.app_context():
     db.create_all()
@@ -336,7 +374,8 @@ def home(user_id):
         
         return render_template("home.html", usuario=user, user_id=user.id, posts=posts, 
                      usuarios_dict=usuarios_dict, user_likes=user_likes,
-                     unread_count=unread_count)
+                     unread_count=unread_count,
+                     notification_count=Notificacion.query.filter_by(usuario_id=user.id, leida=False).count())
     else:
         flash("Usuario no encontrado.")
         return redirect(url_for("index"))
@@ -377,6 +416,8 @@ def add_post(user_id):
             nuevo_post = Post(texto=texto, imagen=imagen, video=video,
                               autor_id=user.id, autor=user.usuario)
             db.session.add(nuevo_post)
+            db.session.commit()
+            notificar_menciones(texto, user.id, "mencion", post_id=nuevo_post.id)
             db.session.commit()
             flash("Post publicado correctamente.")
     return redirect(url_for("home", user_id=user_id))
@@ -430,7 +471,16 @@ def comentar(post_id, user_id):
     post = Post.query.get(post_id)
     user = Usuario.query.get(user_id)
     if post and user and contenido:
-        db.session.add(Comentario(contenido=contenido, usuario_id=user.id, post_id=post.id))
+        comentario = Comentario(contenido=contenido, usuario_id=user.id, post_id=post.id)
+        db.session.add(comentario)
+        db.session.commit()
+        if post.autor_id != user.id:
+            crear_notificacion(post.autor_id, "comentario", f"{user.usuario} comentó en tu publicación.", actor_id=user.id, post_id=post.id, comentario_id=comentario.id)
+        comentaristas = {item.usuario_id for item in Comentario.query.filter_by(post_id=post.id).all()}
+        for comentarista_id in comentaristas:
+            if comentarista_id != user.id and comentarista_id != post.autor_id:
+                crear_notificacion(comentarista_id, "respuesta", f"{user.usuario} también comentó en una publicación que sigues.", actor_id=user.id, post_id=post.id, comentario_id=comentario.id)
+        notificar_menciones(contenido, user.id, "mencion", post_id=post.id, comentario_id=comentario.id)
         db.session.commit()
     if request.args.get('return_to') == 'profile' and post:
         return redirect(url_for("perfil", user_id=post.autor_id, current_user_id=user_id))
@@ -446,6 +496,7 @@ def like(post_id, user_id):
     
     if post and user:
         existing_like = Like.query.filter_by(usuario_id=user.id, post_id=post.id).first()
+        was_liked = existing_like is not None
         
         if existing_like:
             # Si ya existe like, lo eliminamos (toggle off)
@@ -458,6 +509,9 @@ def like(post_id, user_id):
             flash("Post likeado!")
         
         db.session.commit()
+        if not was_liked:
+            crear_notificacion(post.autor_id, "like", f"{user.usuario} indicó que le gusta tu publicación.", actor_id=user.id, post_id=post.id)
+            db.session.commit()
     if request.args.get('return_to') == 'profile' and post:
         return redirect(url_for("perfil", user_id=post.autor_id, current_user_id=user_id))
     return redirect(url_for("home", user_id=user_id))
@@ -509,6 +563,7 @@ def seguir(target_id, current_user_id):
             db.session.delete(existing)
         else:
             db.session.add(Seguidor(seguidor_id=current_user_id, seguido_id=target_id))
+            crear_notificacion(target_id, "seguidor", f"{session.get('usuario', 'Alguien')} comenzó a seguirte.", actor_id=current_user_id)
         db.session.commit()
     return redirect(url_for("perfil", user_id=target_id, current_user_id=current_user_id))
 
@@ -587,6 +642,9 @@ def admin_eliminar():
     for user_id in user_ids:
         user_posts = Post.query.filter_by(autor_id=user_id).all()
         post_ids.update(post.id for post in user_posts)
+        Notificacion.query.filter(
+            (Notificacion.usuario_id == user_id) | (Notificacion.actor_id == user_id)
+        ).delete(synchronize_session=False)
         Seguidor.query.filter((Seguidor.seguidor_id == user_id) | (Seguidor.seguido_id == user_id)).delete(synchronize_session=False)
         Bloqueo.query.filter((Bloqueo.bloqueador_id == user_id) | (Bloqueo.bloqueado_id == user_id)).delete(synchronize_session=False)
         Comentario.query.filter_by(usuario_id=user_id).delete(synchronize_session=False)
@@ -833,10 +891,14 @@ def grupo_chat(grupo_id, user_id):
             video = f"uploads/{filename}"
 
         if contenido or imagen or video:
-            db.session.add(Mensaje(
+            mensaje_grupo = Mensaje(
                 emisor_id=user_id, receptor_id=user_id, grupo_id=grupo_id,
                 contenido=contenido, imagen=imagen, video=video,
-            ))
+            )
+            db.session.add(mensaje_grupo)
+            db.session.commit()
+            miembros_ids = {item.usuario_id for item in GrupoMiembro.query.filter_by(grupo_id=grupo_id).all()}
+            notificar_menciones(contenido, user_id, "mencion", destinatarios_ids=miembros_ids)
             db.session.commit()
         return redirect(url_for("grupo_chat", grupo_id=grupo_id, user_id=user_id))
     mensajes_grupo = Mensaje.query.filter_by(grupo_id=grupo_id).order_by(Mensaje.fecha.asc(), Mensaje.id.asc()).all()
@@ -889,7 +951,18 @@ def mensajes(user_id):
             Mensaje.receptor_id == user_id,
             Mensaje.leido.is_(False),
         ).count(),
+        notification_count=Notificacion.query.filter_by(usuario_id=user_id, leida=False).count(),
     )
+
+@app.route("/notificaciones/<int:user_id>")
+def notificaciones(user_id):
+    if session.get('user_id') != user_id:
+        flash("Inicia sesión para ver tus notificaciones.", "danger")
+        return redirect(url_for("login"))
+    notificaciones_usuario = Notificacion.query.filter_by(usuario_id=user_id).order_by(Notificacion.fecha.desc(), Notificacion.id.desc()).limit(100).all()
+    Notificacion.query.filter_by(usuario_id=user_id, leida=False).update({"leida": True}, synchronize_session=False)
+    db.session.commit()
+    return render_template("notificaciones.html", user_id=user_id, notificaciones=notificaciones_usuario)
 
 @app.route("/buscar/<int:user_id>")
 def buscar(user_id):

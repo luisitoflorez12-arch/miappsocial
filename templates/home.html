@@ -31,6 +31,7 @@
                     </div>
                     <div id="searchResults" class="search-results"></div>
                 </div>
+                <a class="notifications-link" href="{{ url_for('notificaciones', user_id=user_id) }}" aria-label="Abrir notificaciones" title="Notificaciones">🔔{% if notification_count %}<span>{{ notification_count }}</span>{% endif %}</a>
             </div>
             <a href="/logout" class="logout-button" aria-label="Cerrar sesión" title="Cerrar sesión" onclick="return window.confirm('¿Seguro que quieres cerrar sesión?');"><span aria-hidden="true">🚪</span></a>
         </div>
