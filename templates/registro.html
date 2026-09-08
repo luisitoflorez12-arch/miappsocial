@@ -28,10 +28,10 @@
                 <p>Únete a la comunidad ComfeSocial</p>
             </div>
 
-            {% with messages = get_flashed_messages() %}
+            {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                    {% for msg in messages %}
-                        <div class="alert alert-danger">{{ msg }}</div>
+                    {% for category, msg in messages %}
+                        <div class="alert alert-{{ category or 'danger' }}">{{ msg }}</div>
                     {% endfor %}
                 {% endif %}
             {% endwith %}

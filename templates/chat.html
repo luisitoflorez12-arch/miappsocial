@@ -23,7 +23,7 @@
                 <div class="chat-messages" id="mensajesArea">
                     {% if mensajes %}
                         {% for m in mensajes %}
-                            <div class="message {% if m.emisor_id == emisor.id %}sent{% else %}received{% endif %}">
+                            <div class="message {% if m.emisor_id == emisor.id %}sent{% else %}received{% endif %} {% if m.emisor_id == emisor.id %}pressable-message{% endif %}" data-menu-target="message-menu-{{ m.id }}">
                                 <div>
                                     <small class="text-muted" style="display: block; margin-bottom: 0.5rem;">
                                         <strong>{{ m.emisor.usuario }}</strong>
@@ -42,6 +42,14 @@
                                             <span class="message-text">{{ m.contenido }}</span>
                                         {% endif %}
                                     </div>
+                                    {% if m.emisor_id == emisor.id %}
+                                        <div class="action-menu message-menu" id="message-menu-{{ m.id }}">
+                                            <button type="button" onclick="editMessage({{ m.id }}, {{ m.contenido|tojson }})">Editar mensaje</button>
+                                            <form method="POST" action="{{ url_for('eliminar_mensaje', mensaje_id=m.id) }}" onsubmit="return confirm('¿Eliminar este mensaje?');">
+                                                <button type="submit" class="action-danger">Eliminar mensaje</button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
@@ -66,6 +74,7 @@
                             </button>
                         </div>
                         <small id="selected-image" class="selected-image">Puedes enviar texto, una foto, un video o combinarlos.</small>
+                        <button id="remove-selected-file" class="remove-selected-file" type="button" hidden onclick="clearSelectedFile()">Quitar archivo seleccionado</button>
                     </form>
                 </div>
             </div>
@@ -79,19 +88,58 @@
             area.scrollTop = area.scrollHeight;
         }, 100);
 
-        document.getElementById('imagen-chat').addEventListener('change', function() {
+        function updateSelectedFile(input, label) {
             const selectedImage = document.getElementById('selected-image');
-            selectedImage.textContent = this.files.length
-                ? `Imagen seleccionada: ${this.files[0].name}`
-                : 'Puedes enviar texto, una foto, un video o combinarlos.';
+            const removeButton = document.getElementById('remove-selected-file');
+            selectedImage.textContent = input.files.length ? `${label}: ${input.files[0].name}` : 'Puedes enviar texto, una foto, un video o combinarlos.';
+            removeButton.hidden = !input.files.length && !document.getElementById('video-chat').files.length;
+        }
+
+        document.getElementById('imagen-chat').addEventListener('change', function() {
+            updateSelectedFile(this, 'Imagen seleccionada');
         });
 
             document.getElementById('video-chat').addEventListener('change', function() {
-                const selectedImage = document.getElementById('selected-image');
-                selectedImage.textContent = this.files.length
-                ? `Video seleccionado: ${this.files[0].name}`
-                : 'Puedes enviar texto, una foto, un video o combinarlos.';
+                updateSelectedFile(this, 'Video seleccionado');
             });
+
+        function clearSelectedFile() {
+            document.getElementById('imagen-chat').value = '';
+            document.getElementById('video-chat').value = '';
+            updateSelectedFile(document.getElementById('imagen-chat'), 'Archivo seleccionado');
+        }
+
+        function toggleMenu(id) {
+            document.querySelectorAll('.action-menu.is-open').forEach(menu => {
+                if (menu.id !== id) menu.classList.remove('is-open');
+            });
+            document.getElementById(id).classList.toggle('is-open');
+        }
+
+        function editMessage(id, currentContent) {
+            const content = window.prompt('Edita tu mensaje:', currentContent || '');
+            if (content === null || !content.trim()) return;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/mensaje/${id}/editar`;
+            form.innerHTML = `<input type="hidden" name="contenido" value="${content.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.action-menu')) {
+                document.querySelectorAll('.action-menu.is-open').forEach(menu => menu.classList.remove('is-open'));
+            }
+        });
+
+        document.querySelectorAll('.pressable-message').forEach(message => {
+            let pressTimer;
+            const openMenu = () => toggleMenu(message.dataset.menuTarget);
+            message.addEventListener('pointerdown', () => pressTimer = setTimeout(openMenu, 650));
+            ['pointerup', 'pointerleave', 'pointercancel'].forEach(eventName => message.addEventListener(eventName, () => clearTimeout(pressTimer)));
+            message.addEventListener('contextmenu', event => { event.preventDefault(); openMenu(); });
+        });
     </script>
 </body>
 </html>

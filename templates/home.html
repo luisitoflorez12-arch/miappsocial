@@ -35,10 +35,10 @@
 
     <div class="container" style="padding-top: 2rem; padding-bottom: 2rem;">
         <!-- Mostrar mensajes de flash -->
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-info alert-dismissible">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category or 'danger' }} alert-dismissible">
                         {{ message }}
                         <button type="button" onclick="this.parentElement.style.display='none';" style="background: none; border: none; float: right; cursor: pointer; font-size: 1.2rem;">×</button>
                     </div>
@@ -74,6 +74,7 @@
                         <small class="text-muted">Imagen o video (máx. 16MB)</small>
                         <div id="preview-container" style="margin-top: 1rem; display: none;">
                             <img id="preview" src="" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                            <button type="button" class="remove-selected-file" onclick="clearSelectedImage()">Quitar imagen seleccionada</button>
                         </div>
                     </div>
 
@@ -89,8 +90,16 @@
         
         {% if posts %}
             {% for post in posts %}
-            <div class="post-card">
+            <div class="post-card pressable-post" data-menu-target="post-menu-{{ post.id }}">
                 <div class="card-body">
+                    {% if post.autor_id == user_id %}
+                        <button class="post-menu-trigger" type="button" aria-label="Opciones de publicación" onclick="toggleMenu('post-menu-{{ post.id }}')">⋮</button>
+                        <div class="action-menu" id="post-menu-{{ post.id }}">
+                            <form method="POST" action="{{ url_for('eliminar_post', post_id=post.id) }}" onsubmit="return confirm('¿Eliminar esta publicación?');">
+                                <button type="submit" class="action-danger">Eliminar publicación</button>
+                            </form>
+                        </div>
+                    {% endif %}
                     <!-- Meta información -->
                     <div class="post-meta">
                         {% set post_user = usuarios_dict.get(post.autor) %}
@@ -111,11 +120,11 @@
 
                     <!-- Imagen si existe -->
                     {% if post.imagen %}
-                        <img src="{{ url_for('static', filename=post.imagen) }}" alt="Post image" class="post-image">
+                        <img src="{{ url_for('static', filename=post.imagen) }}" alt="Post image" class="post-image pressable-media" data-menu-target="post-menu-{{ post.id }}">
                     {% endif %}
 
                     {% if post.video %}
-                        <video class="post-video" controls preload="metadata">
+                        <video class="post-video pressable-media" controls preload="metadata" data-menu-target="post-menu-{{ post.id }}">
                             <source src="{{ url_for('static', filename=post.video) }}">
                             Tu navegador no puede reproducir este video.
                         </video>
@@ -170,6 +179,44 @@
                 reader.readAsDataURL(file);
             }
         });
+
+        function toggleMenu(id) {
+            document.querySelectorAll('.action-menu.is-open').forEach(menu => {
+                if (menu.id !== id) menu.classList.remove('is-open');
+            });
+            document.getElementById(id).classList.toggle('is-open');
+        }
+
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.action-menu, .post-menu-trigger')) {
+                document.querySelectorAll('.action-menu.is-open').forEach(menu => menu.classList.remove('is-open'));
+            }
+        });
+
+        document.querySelectorAll('.pressable-post, .pressable-media').forEach(element => {
+            let pressTimer;
+            const openMenu = () => {
+                const target = element.dataset.menuTarget;
+                if (target) toggleMenu(target);
+            };
+            element.addEventListener('pointerdown', () => {
+                pressTimer = setTimeout(openMenu, 650);
+            });
+            ['pointerup', 'pointerleave', 'pointercancel'].forEach(eventName => {
+                element.addEventListener(eventName, () => clearTimeout(pressTimer));
+            });
+            element.addEventListener('contextmenu', event => {
+                event.preventDefault();
+                openMenu();
+            });
+        });
+
+        function clearSelectedImage() {
+            const input = document.getElementById('imagen');
+            input.value = '';
+            document.getElementById('preview').src = '';
+            document.getElementById('preview-container').style.display = 'none';
+        }
 
         function buscarUsuarios() {
             const query = document.getElementById('searchInput').value.trim();

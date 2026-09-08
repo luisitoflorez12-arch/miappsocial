@@ -239,8 +239,11 @@ def registro():
             flash("El usuario o el número de teléfono ya están registrados.")
             return redirect(url_for("registro"))
 
-        flash("Registro exitoso. Ahora inicia sesión.")
-        return redirect(url_for("login"))
+        session.clear()
+        session['user_id'] = nuevo.id
+        session['usuario'] = nuevo.usuario
+        flash("Usuario registrado correctamente.", "success")
+        return redirect(url_for("home", user_id=nuevo.id))
 
     return render_template("registro.html")
 
@@ -297,6 +300,29 @@ def add_post(user_id):
             db.session.add(nuevo_post)
             db.session.commit()
             flash("Post publicado correctamente.")
+    return redirect(url_for("home", user_id=user_id))
+
+@app.route("/post/<int:post_id>/eliminar", methods=["POST"])
+def eliminar_post(post_id):
+    post = Post.query.get(post_id)
+    user_id = session.get('user_id')
+    if not post or post.autor_id != user_id:
+        flash("Solo puedes eliminar tus propias publicaciones.", "danger")
+        return redirect(url_for("home", user_id=user_id)) if user_id else redirect(url_for("login"))
+
+    if post.imagen:
+        try:
+            os.remove(os.path.join('static', post.imagen))
+        except OSError:
+            pass
+    if post.video:
+        try:
+            os.remove(os.path.join('static', post.video))
+        except OSError:
+            pass
+    db.session.delete(post)
+    db.session.commit()
+    flash("Publicación eliminada.", "success")
     return redirect(url_for("home", user_id=user_id))
 
 @app.route("/comentar/<int:post_id>/<int:user_id>", methods=["POST"])
@@ -555,6 +581,39 @@ def chat(emisor_id, receptor_id):
     ).order_by(Mensaje.fecha.asc(), Mensaje.id.asc()).all()
 
     return render_template("chat.html", emisor=emisor, receptor=receptor, mensajes=mensajes)
+
+@app.route("/mensaje/<int:mensaje_id>/eliminar", methods=["POST"])
+def eliminar_mensaje(mensaje_id):
+    mensaje = Mensaje.query.get(mensaje_id)
+    user_id = session.get('user_id')
+    if not mensaje or mensaje.emisor_id != user_id:
+        flash("Solo puedes eliminar tus propios mensajes.", "danger")
+        return redirect(url_for("login")) if not user_id else redirect(url_for("chat", emisor_id=user_id, receptor_id=mensaje.receptor_id if mensaje else user_id))
+
+    receptor_id = mensaje.receptor_id
+    for archivo in (mensaje.imagen, mensaje.video):
+        if archivo:
+            try:
+                os.remove(os.path.join('static', archivo))
+            except OSError:
+                pass
+    db.session.delete(mensaje)
+    db.session.commit()
+    return redirect(url_for("chat", emisor_id=user_id, receptor_id=receptor_id))
+
+@app.route("/mensaje/<int:mensaje_id>/editar", methods=["POST"])
+def editar_mensaje(mensaje_id):
+    mensaje = Mensaje.query.get(mensaje_id)
+    user_id = session.get('user_id')
+    if not mensaje or mensaje.emisor_id != user_id:
+        flash("Solo puedes editar tus propios mensajes.", "danger")
+        return redirect(url_for("login")) if not user_id else redirect(url_for("chat", emisor_id=user_id, receptor_id=mensaje.receptor_id if mensaje else user_id))
+
+    contenido = request.form.get("contenido", "").strip()
+    if contenido:
+        mensaje.contenido = contenido
+        db.session.commit()
+    return redirect(url_for("chat", emisor_id=user_id, receptor_id=mensaje.receptor_id))
 
 @app.route("/mensajes/<int:user_id>")
 def mensajes(user_id):
