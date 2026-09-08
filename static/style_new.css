@@ -2291,10 +2291,12 @@ header { background: #0d1b2a; }
 
 @media (max-width: 600px) {
     .messages-page { padding-top: 1.1rem; padding-bottom: 4rem; }
-    .messages-heading { align-items: stretch; padding-bottom: 0.85rem; }
-    .messages-heading h1 { font-size: 1.55rem; }
-    .messages-heading-actions { justify-content: space-between; gap: 0.45rem; }
-    .messages-new-group { min-height: 34px; padding: 0.45rem 0.65rem; font-size: 0.76rem; }
+    .messages-heading { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.5rem; padding-bottom: 0.85rem; }
+    .messages-title-block { min-width: 0; }
+    .messages-heading h1 { font-size: 1.35rem; white-space: nowrap; }
+    .messages-heading-actions { flex: 0 0 auto; justify-content: flex-end; gap: 0; }
+    .messages-heading-actions .messages-total { display: none; }
+    .messages-new-group { min-height: 34px; padding: 0.45rem 0.6rem; font-size: 0.74rem; white-space: nowrap; }
     .conversation-section-label { margin-top: 1rem; }
     .conversation-item { min-height: 68px; padding: 0.65rem 0; }
     .conversation-avatar { width: 42px; height: 42px; flex-basis: 42px; font-size: 1.05rem; }

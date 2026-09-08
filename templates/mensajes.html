@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChatSocial</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style_new.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#1877f2">
 </head>
 <body>
     <header class="messages-header">
@@ -96,6 +98,7 @@
             </div>
         </div>
     </div>
+    <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('{{ url_for('static', filename='sw.js') }}');</script>
     <script>
         let pendingForm = null;
 

@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ComfeSocial</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style_new.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#1877f2">
     <!-- Favicon -->
     <link rel="icon" href="{{ url_for('static', filename='logocomfesocial.png') }}">
 </head>
@@ -35,5 +37,6 @@
     <footer>
         <p>&copy; 2026 ComfeSocial. Todos los derechos reservados.</p>
     </footer>
+    <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('{{ url_for('static', filename='sw.js') }}');</script>
 </body>
 </html>
