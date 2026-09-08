@@ -137,12 +137,28 @@ class Mensaje(db.Model):
     imagen = db.Column(db.String(255))
     video = db.Column(db.String(255))
     respuesta_a_id = db.Column(db.Integer, db.ForeignKey('mensaje.id'), nullable=True)
+    grupo_id = db.Column(db.Integer, db.ForeignKey('grupo.id'), nullable=True)
     leido = db.Column(db.Boolean, default=False, nullable=False)
     fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     emisor = db.relationship('Usuario', foreign_keys=[emisor_id])
     receptor = db.relationship('Usuario', foreign_keys=[receptor_id])
     respuesta_a = db.relationship('Mensaje', remote_side=[id], uselist=False)
+
+class Grupo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    creador_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    creador = db.relationship('Usuario', foreign_keys=[creador_id])
+
+class GrupoMiembro(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    grupo_id = db.Column(db.Integer, db.ForeignKey('grupo.id'), nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    grupo = db.relationship('Grupo', backref=db.backref('miembros', cascade='all, delete-orphan'))
+    usuario = db.relationship('Usuario', foreign_keys=[usuario_id])
+    __table_args__ = (db.UniqueConstraint('grupo_id', 'usuario_id', name='unique_grupo_miembro'),)
 
 class Seguidor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -177,6 +193,9 @@ with app.app_context():
     if 'respuesta_a_id' not in {column['name'] for column in inspect(db.engine).get_columns('mensaje')}:
         with db.engine.begin() as connection:
             connection.execute(text('ALTER TABLE mensaje ADD COLUMN respuesta_a_id INTEGER'))
+    if 'grupo_id' not in {column['name'] for column in inspect(db.engine).get_columns('mensaje')}:
+        with db.engine.begin() as connection:
+            connection.execute(text('ALTER TABLE mensaje ADD COLUMN grupo_id INTEGER'))
     if 'video' not in {column['name'] for column in inspect(db.engine).get_columns('post')}:
         with db.engine.begin() as connection:
             connection.execute(text('ALTER TABLE post ADD COLUMN video VARCHAR(255)'))
@@ -305,7 +324,11 @@ def home(user_id):
         
         # Crear diccionario de likes del usuario actual
         user_likes = {like.post_id for like in Like.query.filter_by(usuario_id=user.id).all()}
-        unread_count = Mensaje.query.filter_by(receptor_id=user.id, leido=False).count()
+        unread_count = Mensaje.query.filter(
+            Mensaje.grupo_id.is_(None),
+            Mensaje.receptor_id == user.id,
+            Mensaje.leido.is_(False),
+        ).count()
         
         return render_template("home.html", usuario=user, user_id=user.id, posts=posts, 
                      usuarios_dict=usuarios_dict, user_likes=user_likes,
@@ -736,6 +759,51 @@ def editar_mensaje(mensaje_id):
         db.session.commit()
     return redirect(url_for("chat", emisor_id=user_id, receptor_id=mensaje.receptor_id))
 
+@app.route("/grupos/crear", methods=["GET", "POST"])
+def crear_grupo():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for("login"))
+    usuarios = Usuario.query.filter(Usuario.id != user_id).order_by(Usuario.usuario.asc()).all()
+    if request.method == "POST":
+        nombre = request.form.get("nombre", "").strip()
+        miembros_ids = {int(value) for value in request.form.getlist("miembros") if value.isdigit()}
+        miembros_ids.discard(user_id)
+        if not nombre:
+            flash("Escribe un nombre para el grupo.", "danger")
+        elif not miembros_ids:
+            flash("Selecciona al menos una persona para el grupo.", "danger")
+        else:
+            grupo = Grupo(nombre=nombre[:100], creador_id=user_id)
+            db.session.add(grupo)
+            db.session.flush()
+            db.session.add(GrupoMiembro(grupo_id=grupo.id, usuario_id=user_id))
+            for miembro_id in miembros_ids:
+                if Usuario.query.get(miembro_id):
+                    db.session.add(GrupoMiembro(grupo_id=grupo.id, usuario_id=miembro_id))
+            db.session.commit()
+            return redirect(url_for("grupo_chat", grupo_id=grupo.id, user_id=user_id))
+    return render_template("crear_grupo.html", usuario_id=user_id, usuarios=usuarios)
+
+@app.route("/grupo/<int:grupo_id>/<int:user_id>", methods=["GET", "POST"])
+def grupo_chat(grupo_id, user_id):
+    if session.get('user_id') != user_id:
+        return redirect(url_for("login"))
+    grupo = Grupo.query.get(grupo_id)
+    usuario = Usuario.query.get(user_id)
+    miembro = GrupoMiembro.query.filter_by(grupo_id=grupo_id, usuario_id=user_id).first()
+    if not grupo or not usuario or not miembro:
+        flash("No tienes acceso a este grupo.", "danger")
+        return redirect(url_for("mensajes", user_id=user_id))
+    if request.method == "POST":
+        contenido = request.form.get("mensaje", "").strip()
+        if contenido:
+            db.session.add(Mensaje(emisor_id=user_id, receptor_id=user_id, grupo_id=grupo_id, contenido=contenido))
+            db.session.commit()
+        return redirect(url_for("grupo_chat", grupo_id=grupo_id, user_id=user_id))
+    mensajes_grupo = Mensaje.query.filter_by(grupo_id=grupo_id).order_by(Mensaje.fecha.asc(), Mensaje.id.asc()).all()
+    return render_template("chat_grupo.html", grupo=grupo, usuario=usuario, mensajes=mensajes_grupo, user_id=user_id)
+
 @app.route("/mensajes/<int:user_id>")
 def mensajes(user_id):
     if session.get('user_id') != user_id:
@@ -748,6 +816,7 @@ def mensajes(user_id):
 
     conversaciones = {}
     mensajes_usuario = Mensaje.query.filter(
+        Mensaje.grupo_id.is_(None),
         (Mensaje.emisor_id == user_id) | (Mensaje.receptor_id == user_id)
     ).order_by(Mensaje.fecha.desc(), Mensaje.id.desc()).all()
 
@@ -766,12 +835,22 @@ def mensajes(user_id):
                 and partner_id in conversaciones):
             conversaciones[partner_id]["nuevos"] += 1
 
+    grupos = []
+    for pertenencia in GrupoMiembro.query.filter_by(usuario_id=user_id).all():
+        ultimo = Mensaje.query.filter_by(grupo_id=pertenencia.grupo_id).order_by(Mensaje.fecha.desc(), Mensaje.id.desc()).first()
+        grupos.append({"grupo": pertenencia.grupo, "ultimo": ultimo})
+
     return render_template(
         "mensajes.html",
         usuario=usuario,
         user_id=user_id,
         conversaciones=list(conversaciones.values()),
-        unread_count=Mensaje.query.filter_by(receptor_id=user_id, leido=False).count(),
+        grupos=grupos,
+        unread_count=Mensaje.query.filter(
+            Mensaje.grupo_id.is_(None),
+            Mensaje.receptor_id == user_id,
+            Mensaje.leido.is_(False),
+        ).count(),
     )
 
 @app.route("/buscar/<int:user_id>")

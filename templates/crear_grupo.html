@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo grupo - ComfeSocial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_new.css') }}">
+</head>
+<body>
+    <header class="messages-header">
+        <div class="container messages-toolbar">
+            <a href="{{ url_for('mensajes', user_id=usuario_id) }}" class="messages-back-button" aria-label="Volver a mensajes">←</a>
+            <strong class="messages-brand">Nuevo grupo</strong>
+        </div>
+    </header>
+    <main class="container group-create-page">
+        <p class="eyebrow">Una conversación para compartir</p>
+        <h1>Crear un grupo</h1>
+        <p class="group-create-intro">Ponle un nombre y elige con quién quieres conversar.</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}<div class="alert alert-{{ category or 'danger' }}">{{ message }}</div>{% endfor %}
+        {% endwith %}
+        <form method="POST" class="group-form">
+            <label class="form-label" for="nombre">Nombre del grupo</label>
+            <input class="form-control" id="nombre" name="nombre" type="text" maxlength="100" placeholder="Ej. Equipo creativo" required autofocus>
+            <fieldset class="group-members">
+                <legend class="form-label">Selecciona integrantes</legend>
+                {% if usuarios %}
+                    {% for usuario in usuarios %}
+                        <label class="member-option">
+                            <input type="checkbox" name="miembros" value="{{ usuario.id }}">
+                            <span class="member-avatar">{{ usuario.usuario[0]|upper }}</span>
+                            <span><strong>{{ usuario.usuario }}</strong><small>{{ usuario.nombre or 'Miembro de ComfeSocial' }}</small></span>
+                        </label>
+                    {% endfor %}
+                {% else %}
+                    <p class="group-create-intro">Todavía no hay otras personas registradas.</p>
+                {% endif %}
+            </fieldset>
+            <button class="btn btn-primary group-submit" type="submit">Crear grupo <span aria-hidden="true">→</span></button>
+        </form>
+    </main>
+</body>
+</html>
