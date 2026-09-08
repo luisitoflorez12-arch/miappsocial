@@ -9,6 +9,9 @@
 <body>
     <main class="profile-page container">
         <a class="profile-back" href="{{ url_for('home', user_id=current_user_id) }}">← Volver al inicio</a>
+        <a class="profile-floating-home" id="profile-floating-home" href="{{ url_for('home', user_id=current_user_id) }}" aria-label="Volver al inicio">
+            <span aria-hidden="true">↑</span><span>Inicio</span>
+        </a>
         <div class="profile-card">
                 <!-- Encabezado del perfil -->
                 <div class="profile-header">
@@ -157,6 +160,11 @@
         </div>
     </div>
     <script>
+        const floatingHome = document.getElementById('profile-floating-home');
+        window.addEventListener('scroll', function() {
+            floatingHome.classList.toggle('is-visible', window.scrollY > 420);
+        }, { passive: true });
+
         let pendingForm = null;
 
         function requestConfirmation(form, message) {

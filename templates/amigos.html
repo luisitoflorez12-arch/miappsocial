@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amigos - ComfeSocial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_new.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#1877f2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ComfeSocial">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.svg') }}">
+</head>
+<body>
+    <header class="messages-header">
+        <div class="container messages-toolbar">
+            <a href="{{ url_for('home', user_id=user_id) }}" class="messages-back-button" aria-label="Volver al inicio">←</a>
+            <strong class="messages-brand">Amigos</strong>
+        </div>
+    </header>
+    <main class="container friends-page">
+        <div class="friends-heading"><div><p class="eyebrow">Tu comunidad</p><h1>Amigos y solicitudes</h1></div><span class="friends-count">{{ amigos|length }}</span></div>
+        <section class="friends-section">
+            <h2>Solicitudes recibidas <span>{{ solicitudes|length }}</span></h2>
+            {% for solicitud in solicitudes %}
+                <div class="friend-row">
+                    <span class="conversation-avatar">{{ solicitud.emisor.usuario[0]|upper }}</span>
+                    <div class="friend-info"><strong>{{ solicitud.emisor.usuario }}</strong><small>Quiere agregarte</small></div>
+                    <div class="friend-actions"><form method="POST" action="{{ url_for('gestionar_solicitud', solicitud_id=solicitud.id, accion='aceptar') }}"><button class="btn btn-primary" type="submit">Aceptar</button></form><form method="POST" action="{{ url_for('gestionar_solicitud', solicitud_id=solicitud.id, accion='rechazar') }}"><button class="btn btn-secondary-outline" type="submit">Rechazar</button></form></div>
+                </div>
+            {% else %}<p class="friends-empty">No tienes solicitudes pendientes.</p>{% endfor %}
+        </section>
+        <section class="friends-section">
+            <h2>Amigos agregados <span>{{ amigos|length }}</span></h2>
+            {% for amigo in amigos %}
+                <div class="friend-row"><a class="friend-link" href="{{ url_for('perfil', user_id=amigo.id, current_user_id=user_id) }}"><span class="conversation-avatar">{{ amigo.usuario[0]|upper }}</span><span class="friend-info"><strong>{{ amigo.usuario }}</strong><small>{{ amigo.nombre or 'Ver perfil' }}</small></span></a><form method="POST" action="{{ url_for('eliminar_amigo', target_id=amigo.id, user_id=user_id) }}"><button class="friend-remove" type="submit" title="Eliminar amigo" aria-label="Eliminar amigo">×</button></form></div>
+            {% else %}<p class="friends-empty">Todavía no tienes amigos agregados.</p>{% endfor %}
+        </section>
+    </main>
+</body>
+</html>

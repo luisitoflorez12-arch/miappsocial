@@ -3356,6 +3356,38 @@ footer p {
 .messages-page .conversation-item .conversation-content span,
 .messages-page .conversation-item .conversation-meta { color: #aab4be !important; }
 
+/* Friends and requests panel. */
+.home-toolbar-actions .friends-link { display: grid; width: 38px; height: 38px; place-items: center; flex: 0 0 38px; border-radius: 50%; background: #29343f; color: #b9d9f5; font: 1rem/1 'Segoe UI', sans-serif; text-decoration: none; }
+.home-toolbar-actions .friends-link:hover { background: #1877f2; color: white; }
+.friends-page { max-width: 760px; padding-top: 2.5rem; padding-bottom: 3rem; }
+.friends-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #3a4148; }
+.friends-heading h1 { margin: 0.15rem 0 0; color: #edf2f7; }
+.friends-count { display: grid; min-width: 34px; height: 34px; place-items: center; border: 1px solid #1877f2; border-radius: 50%; color: #9ed0f5; }
+.friends-section { margin-top: 1.25rem; border-bottom: 1px solid #3a4148; }
+.friends-section h2 { display: flex; justify-content: space-between; margin: 0; padding-bottom: 0.6rem; color: #dce5ee; font: 700 0.8rem 'Segoe UI', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
+.friends-section h2 span { color: #79baf0; }
+.friend-row { display: flex; align-items: center; gap: 0.75rem; min-width: 0; padding: 0.75rem 0; border-top: 1px solid #2d353e; }
+.friend-link { display: flex; align-items: center; gap: 0.75rem; min-width: 0; flex: 1; color: inherit; text-decoration: none; }
+.friend-info { display: grid; min-width: 0; gap: 0.15rem; }
+.friend-info strong, .friend-info small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friend-info strong { color: #edf2f7; }
+.friend-info small { color: #9da9b5; }
+.friend-actions { display: flex; gap: 0.4rem; flex: 0 0 auto; }
+.friend-actions form { display: contents; }
+.friend-actions .btn { min-height: 34px; padding: 0.45rem 0.65rem; font-size: 0.76rem; }
+.friend-remove { display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid #4b5966; border-radius: 50%; background: transparent; color: #aeb9c3; cursor: pointer; font-size: 1.2rem; }
+.friend-remove:hover { border-color: #ff6b7d; color: #ff9aa9; }
+.friends-empty { padding: 0.8rem 0; color: #8d9aa6; font-size: 0.85rem; }
+
+@media (max-width: 600px) {
+    .home-toolbar-actions .friends-link { width: 34px; height: 34px; flex-basis: 34px; font-size: 0.9rem; }
+    .friends-page { padding: 1.5rem 0.75rem 3rem; }
+    .friends-heading h1 { font-size: 1.3rem; }
+    .friend-row { gap: 0.5rem; }
+    .friend-actions { gap: 0.25rem; }
+    .friend-actions .btn { padding: 0.4rem 0.45rem; font-size: 0.7rem; }
+}
+
 @media (max-width: 600px) {
     .messages-page .conversation-item { margin-top: 0.45rem; padding: 0.65rem 0.55rem; }
 }
@@ -3379,6 +3411,9 @@ footer p {
 .profile-page .profile-post-count { background: #24282d; border: 1px solid #1877f2; color: #a9d8ff; }
 .profile-page .empty-profile-posts { border-color: #3a4148; background: #202428; }
 .profile-page .profile-post { border-color: #3a4148; background: #202428; }
+.profile-floating-home { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 1300; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 0.85rem; border: 1px solid #1877f2; border-radius: 999px; background: #202428; color: #b9d9f5; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); font: 700 0.82rem 'Segoe UI', sans-serif; opacity: 0; pointer-events: none; transform: translateY(12px); transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease; }
+.profile-floating-home.is-visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.profile-floating-home:hover { background: #1877f2; color: white; }
 
 @media (max-width: 600px) {
     .feed-page { padding-left: 0 !important; padding-right: 0 !important; }
@@ -3390,4 +3425,5 @@ footer p {
     .profile-page .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem; }
     .profile-page .actions form { min-width: 0; }
     .profile-page .actions .btn { width: 100%; padding: 0.5rem 0.35rem; font-size: 0.75rem; }
+    .profile-floating-home { right: 0.8rem; bottom: 0.8rem; padding: 0.6rem 0.75rem; font-size: 0.76rem; }
 }

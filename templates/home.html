@@ -7,6 +7,10 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style_new.css') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#1877f2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ComfeSocial">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.svg') }}">
 </head>
 <body>
     <a class="messages-fab" href="{{ url_for('mensajes', user_id=user_id) }}" aria-label="Abrir mensajes">
@@ -29,6 +33,7 @@
                     <div class="header-search" id="header-search">
                         <button type="button" class="search-toggle" id="search-toggle" aria-label="Buscar perfiles" title="Buscar perfiles" aria-expanded="false">⌕</button>
                     </div>
+                    <a class="friends-link" href="{{ url_for('amigos', user_id=user_id) }}" aria-label="Abrir amigos y solicitudes" title="Amigos y solicitudes">👥</a>
                     <a class="notifications-link" href="{{ url_for('notificaciones', user_id=user_id) }}" aria-label="Abrir notificaciones" title="Notificaciones">🔔{% if notification_count %}<span>{{ notification_count }}</span>{% endif %}</a>
                     <a href="/logout" class="logout-button" aria-label="Cerrar sesión" title="Cerrar sesión" onclick="return window.confirm('¿Seguro que quieres cerrar sesión?');"><span aria-hidden="true">🚪</span></a>
                 </div>

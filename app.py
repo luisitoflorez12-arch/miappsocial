@@ -173,6 +173,15 @@ class Seguidor(db.Model):
     fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     __table_args__ = (db.UniqueConstraint('seguidor_id', 'seguido_id', name='unique_seguidor'),)
 
+class SolicitudAmistad(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    emisor_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    receptor_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    emisor = db.relationship('Usuario', foreign_keys=[emisor_id])
+    receptor = db.relationship('Usuario', foreign_keys=[receptor_id])
+    __table_args__ = (db.UniqueConstraint('emisor_id', 'receptor_id', name='unique_solicitud_amistad'),)
+
 class Bloqueo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     bloqueador_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
@@ -569,10 +578,43 @@ def seguir(target_id, current_user_id):
         elif existing:
             db.session.delete(existing)
         else:
-            db.session.add(Seguidor(seguidor_id=current_user_id, seguido_id=target_id))
-            crear_notificacion(target_id, "seguidor", f"{session.get('usuario', 'Alguien')} comenzó a seguirte.", actor_id=current_user_id)
+            solicitud = SolicitudAmistad.query.filter_by(emisor_id=current_user_id, receptor_id=target_id).first()
+            if not solicitud:
+                db.session.add(SolicitudAmistad(emisor_id=current_user_id, receptor_id=target_id))
+                crear_notificacion(target_id, "solicitud", f"{session.get('usuario', 'Alguien')} te envió una solicitud de amistad.", actor_id=current_user_id)
         db.session.commit()
     return redirect(url_for("perfil", user_id=target_id, current_user_id=current_user_id))
+
+@app.route("/amigos/<int:user_id>")
+def amigos(user_id):
+    if session.get('user_id') != user_id:
+        return redirect(url_for("login"))
+    amigos_ids = [item.seguido_id for item in Seguidor.query.filter_by(seguidor_id=user_id).all()]
+    amigos_users = Usuario.query.filter(Usuario.id.in_(amigos_ids)).order_by(Usuario.usuario.asc()).all() if amigos_ids else []
+    solicitudes = SolicitudAmistad.query.filter_by(receptor_id=user_id).order_by(SolicitudAmistad.fecha.desc()).all()
+    return render_template("amigos.html", user_id=user_id, amigos=amigos_users, solicitudes=solicitudes)
+
+@app.route("/amigos/solicitud/<int:solicitud_id>/<accion>", methods=["POST"])
+def gestionar_solicitud(solicitud_id, accion):
+    user_id = session.get('user_id')
+    solicitud = SolicitudAmistad.query.get(solicitud_id)
+    if not user_id or not solicitud or solicitud.receptor_id != user_id or accion not in {"aceptar", "rechazar"}:
+        return redirect(url_for("login")) if not user_id else redirect(url_for("amigos", user_id=user_id))
+    if accion == "aceptar":
+        db.session.add(Seguidor(seguidor_id=solicitud.emisor_id, seguido_id=solicitud.receptor_id))
+        crear_notificacion(solicitud.emisor_id, "seguidor", f"{session.get('usuario', 'Alguien')} aceptó tu solicitud de amistad.", actor_id=user_id)
+    db.session.delete(solicitud)
+    db.session.commit()
+    return redirect(url_for("amigos", user_id=user_id))
+
+@app.route("/amigos/eliminar/<int:target_id>/<int:user_id>", methods=["POST"])
+def eliminar_amigo(target_id, user_id):
+    if session.get('user_id') != user_id:
+        return redirect(url_for("login"))
+    Seguidor.query.filter_by(seguidor_id=user_id, seguido_id=target_id).delete(synchronize_session=False)
+    Seguidor.query.filter_by(seguidor_id=target_id, seguido_id=user_id).delete(synchronize_session=False)
+    db.session.commit()
+    return redirect(url_for("amigos", user_id=user_id))
 
 @app.route("/bloquear/<int:target_id>/<int:current_user_id>", methods=["POST"])
 def bloquear(target_id, current_user_id):
