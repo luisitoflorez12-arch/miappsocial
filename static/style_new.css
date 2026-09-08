@@ -2712,8 +2712,9 @@ footer p {
 
     .chat-form .input-group {
         display: grid;
-        grid-template-columns: 40px 40px 1fr auto;
+        grid-template-columns: 40px 40px minmax(0, 1fr) auto;
         gap: 0.4rem;
+        width: 100%;
     }
 
     .chat-image-button {
@@ -2723,8 +2724,11 @@ footer p {
     }
 
     .chat-form .btn {
+        justify-self: end;
+        margin-right: 0.2rem;
         padding: 0.65rem 0.8rem;
         font-size: 0.9rem;
+        white-space: nowrap;
     }
 
     .selected-image {
