@@ -1132,11 +1132,22 @@ main.container {
     overflow: hidden;
 }
 
+.chat-page {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
 .chat-header {
     background: linear-gradient(135deg, #0f4ca8 0%, #1a5ec7 100%);
     color: white;
     padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
+
+.chat-header-person { min-width: 0; flex: 1; }
+.chat-header-person small { opacity: 0.78; }
 
 .chat-header h4 {
     margin: 0.5rem 0;
@@ -1149,6 +1160,20 @@ main.container {
     transition: color 0.2s ease, text-shadow 0.25s ease, transform 0.2s ease, filter 0.25s ease;
     cursor: pointer;
 }
+
+.chat-search {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: min(220px, 35%);
+    padding: 0.35rem 0.6rem;
+    border: 1px solid rgba(255,255,255,0.45);
+    border-radius: 999px;
+    background: rgba(0,0,0,0.14);
+}
+
+.chat-search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: white; }
+.chat-search input::placeholder { color: rgba(255,255,255,0.78); }
 
 .chat-header-name:hover,
 .chat-header-name:focus-visible {
@@ -1195,8 +1220,36 @@ main.container {
     display: inline-block;
     max-width: 70%;
     word-wrap: break-word;
+    overflow-wrap: anywhere;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
+.message-status {
+    display: block;
+    margin-top: 0.3rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.72rem;
+    line-height: 1;
+    text-align: right;
+}
+
+.message-status.is-seen {
+    color: #ff3b30;
+}
+
+.reply-quote {
+    display: grid;
+    gap: 0.1rem;
+    margin: -0.25rem -0.25rem 0.6rem;
+    padding: 0.4rem 0.6rem;
+    border-left: 3px solid currentColor;
+    background: rgba(255,255,255,0.12);
+    border-radius: 4px;
+    font-size: 0.78rem;
+    opacity: 0.9;
+}
+
+.reply-quote span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .message-image {
     display: block;
@@ -1232,6 +1285,22 @@ main.container {
 .chat-input-area {
     padding: 1.5rem;
 }
+
+.reply-preview {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.65rem;
+    padding: 0.55rem 0.75rem;
+    border-left: 3px solid var(--primary-blue);
+    background: #edf5ff;
+    color: #31506f;
+    font-size: 0.82rem;
+}
+
+.reply-preview div { display: grid; min-width: 0; }
+.reply-preview span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reply-preview button { border: 0; background: transparent; color: inherit; font-size: 1.2rem; cursor: pointer; }
 
 .chat-form .input-group {
     align-items: center;
@@ -1531,6 +1600,83 @@ a:hover {
 .back-link:active {
     background: rgba(255, 255, 255, 0.24);
     transform: scale(0.98);
+}
+
+@media (max-width: 600px) {
+    html,
+    body {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .chat-page-container {
+        padding: 0;
+    }
+
+    .chat-container {
+        min-height: 100vh;
+        border-radius: 0;
+    }
+
+    .chat-header {
+        padding: 0.65rem 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .back-link {
+        width: 32px;
+        min-width: 32px;
+        min-height: 32px;
+        height: 32px;
+        justify-content: center;
+        padding: 0;
+        font-size: 1.1rem;
+    }
+
+    .chat-header h4.chat-header-name {
+        max-width: 34vw;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.98rem;
+    }
+
+    .chat-header-person small {
+        font-size: 0.7rem;
+    }
+
+    .chat-search {
+        width: min(43vw, 180px);
+        padding: 0.25rem 0.45rem;
+        font-size: 0.78rem;
+    }
+
+    .chat-messages {
+        height: calc(100vh - 156px);
+        padding: 0.9rem 0.65rem;
+    }
+
+    .bubble {
+        max-width: 84%;
+        padding: 0.7rem;
+    }
+
+    .chat-input-area {
+        padding: 0.65rem;
+    }
+
+    .chat-image-button {
+        width: 36px;
+        min-width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+
+    .chat-form .btn {
+        padding: 0.55rem 0.7rem;
+        font-size: 0.82rem;
+    }
 }
 
 .flex-grow-1 {

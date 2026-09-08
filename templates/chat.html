@@ -12,11 +12,17 @@
             <div class="chat-container">
                 <!-- Encabezado del chat -->
                 <div class="chat-header">
-                    <a href="{{ url_for('mensajes', user_id=emisor.id) }}" class="back-link">
-                        ← Volver a mis chats
+                    <a href="{{ url_for('home', user_id=emisor.id) }}" class="back-link" aria-label="Volver al inicio" title="Volver al inicio">
+                        <span aria-hidden="true">←</span>
                     </a>
-                    <h4 class="chat-header-name">💬 Chat con {{ receptor.usuario }}</h4>
-                    <small>📱 {{ receptor.telefono }}</small>
+                    <div class="chat-header-person">
+                        <h4 class="chat-header-name">{{ receptor.usuario }}</h4>
+                        <small>En línea</small>
+                    </div>
+                    <label class="chat-search" for="chat-search">
+                        <span aria-hidden="true">⌕</span>
+                        <input type="search" id="chat-search" placeholder="Buscar en el chat" autocomplete="off" aria-label="Buscar en el chat">
+                    </label>
                 </div>
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% for category, message in messages %}
@@ -28,12 +34,18 @@
                 <div class="chat-messages" id="mensajesArea">
                     {% if mensajes %}
                         {% for m in mensajes %}
-                            <div class="message {% if m.emisor_id == emisor.id %}sent{% else %}received{% endif %} {% if m.emisor_id == emisor.id %}pressable-message{% endif %}" data-menu-target="message-menu-{{ m.id }}">
+                            <div class="message {% if m.emisor_id == emisor.id %}sent{% else %}received{% endif %} pressable-message" data-message-id="{{ m.id }}" data-menu-target="message-menu-{{ m.id }}" data-search-text="{{ (m.contenido or '')|lower }}">
                                 <div>
                                     <small class="text-muted" style="display: block; margin-bottom: 0.5rem;">
                                         <strong>{{ m.emisor.usuario }}</strong>
                                     </small>
                                     <div class="bubble">
+                                        {% if m.respuesta_a %}
+                                            <div class="reply-quote">
+                                                <strong>{{ m.respuesta_a.emisor.usuario }}</strong>
+                                                <span>{{ m.respuesta_a.contenido or 'Archivo adjunto' }}</span>
+                                            </div>
+                                        {% endif %}
                                         {% if m.imagen %}
                                             <img class="message-image" src="{{ url_for('static', filename=m.imagen) }}" alt="Imagen enviada">
                                         {% endif %}
@@ -45,6 +57,9 @@
                                         {% endif %}
                                         {% if m.contenido %}
                                             <span class="message-text">{{ m.contenido }}</span>
+                                        {% endif %}
+                                        {% if m.emisor_id == emisor.id %}
+                                            <span class="message-status {% if m.leido %}is-seen{% endif %}" title="{% if m.leido %}Visto{% else %}Enviado{% endif %}" aria-label="{% if m.leido %}Mensaje visto{% else %}Mensaje enviado{% endif %}">👁</span>
                                         {% endif %}
                                     </div>
                                     {% if m.emisor_id == emisor.id %}
@@ -68,6 +83,11 @@
                 <!-- Área de entrada de mensajes -->
                 <div class="chat-input-area">
                     <form method="POST" enctype="multipart/form-data" class="chat-form">
+                        <input type="hidden" name="respuesta_a_id" id="respuesta-a-id" value="">
+                        <div class="reply-preview" id="reply-preview" hidden>
+                            <div><strong>Respondiendo a <span id="reply-author"></span></strong><span id="reply-content"></span></div>
+                            <button type="button" id="cancel-reply" aria-label="Cancelar respuesta" title="Cancelar respuesta">×</button>
+                        </div>
                         <div class="input-group">
                             <label class="chat-image-button" for="imagen-chat" title="Adjuntar imagen">📷</label>
                             <input type="file" id="imagen-chat" name="imagen" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
@@ -136,6 +156,14 @@
             }
         });
 
+        const searchInput = document.getElementById('chat-search');
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            document.querySelectorAll('.message').forEach(message => {
+                message.hidden = Boolean(query) && !message.dataset.searchText.includes(query);
+            });
+        });
+
         // Scroll automático al último mensaje
         setTimeout(function() {
             const area = document.getElementById('mensajesArea');
@@ -201,11 +229,47 @@
 
         document.querySelectorAll('.pressable-message').forEach(message => {
             let pressTimer;
-            const openMenu = () => toggleMenu(message.dataset.menuTarget);
-            message.addEventListener('pointerdown', () => pressTimer = setTimeout(openMenu, 650));
+            let startX = 0;
+            let startY = 0;
+            let swiped = false;
+            const openMenu = () => {
+                if (document.getElementById(message.dataset.menuTarget)) toggleMenu(message.dataset.menuTarget);
+            };
+            message.addEventListener('pointerdown', event => {
+                startX = event.clientX;
+                startY = event.clientY;
+                swiped = false;
+                pressTimer = setTimeout(openMenu, 650);
+            });
+            message.addEventListener('pointermove', event => {
+                const deltaX = event.clientX - startX;
+                const deltaY = event.clientY - startY;
+                if (Math.abs(deltaX) > 12 || Math.abs(deltaY) > 12) clearTimeout(pressTimer);
+                if (deltaX > 70 && Math.abs(deltaY) < 45) {
+                    swiped = true;
+                    prepareReply(message);
+                }
+            });
             ['pointerup', 'pointerleave', 'pointercancel'].forEach(eventName => message.addEventListener(eventName, () => clearTimeout(pressTimer)));
             message.addEventListener('contextmenu', event => { event.preventDefault(); openMenu(); });
+            message.addEventListener('click', event => { if (swiped) event.preventDefault(); });
         });
+
+        function prepareReply(message) {
+            const content = message.querySelector('.message-text')?.textContent.trim() || 'Archivo adjunto';
+            document.getElementById('respuesta-a-id').value = message.dataset.messageId;
+            document.getElementById('reply-author').textContent = message.querySelector('strong')?.textContent || '';
+            document.getElementById('reply-content').textContent = content;
+            document.getElementById('reply-preview').hidden = false;
+            document.querySelector('.chat-form input[name="mensaje"]').focus();
+        }
+
+        function cancelReply() {
+            document.getElementById('respuesta-a-id').value = '';
+            document.getElementById('reply-preview').hidden = true;
+        }
+
+        document.getElementById('cancel-reply').addEventListener('click', cancelReply);
     </script>
 </body>
 </html>

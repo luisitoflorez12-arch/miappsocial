@@ -136,11 +136,13 @@ class Mensaje(db.Model):
     contenido = db.Column(db.Text, nullable=False, default="")
     imagen = db.Column(db.String(255))
     video = db.Column(db.String(255))
+    respuesta_a_id = db.Column(db.Integer, db.ForeignKey('mensaje.id'), nullable=True)
     leido = db.Column(db.Boolean, default=False, nullable=False)
     fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     emisor = db.relationship('Usuario', foreign_keys=[emisor_id])
     receptor = db.relationship('Usuario', foreign_keys=[receptor_id])
+    respuesta_a = db.relationship('Mensaje', remote_side=[id], uselist=False)
 
 class Seguidor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -172,6 +174,9 @@ with app.app_context():
     if 'video' not in {column['name'] for column in inspect(db.engine).get_columns('mensaje')}:
         with db.engine.begin() as connection:
             connection.execute(text('ALTER TABLE mensaje ADD COLUMN video VARCHAR(255)'))
+    if 'respuesta_a_id' not in {column['name'] for column in inspect(db.engine).get_columns('mensaje')}:
+        with db.engine.begin() as connection:
+            connection.execute(text('ALTER TABLE mensaje ADD COLUMN respuesta_a_id INTEGER'))
     if 'video' not in {column['name'] for column in inspect(db.engine).get_columns('post')}:
         with db.engine.begin() as connection:
             connection.execute(text('ALTER TABLE post ADD COLUMN video VARCHAR(255)'))
@@ -624,6 +629,7 @@ def chat(emisor_id, receptor_id):
 
     if request.method == "POST":
         contenido = request.form.get("mensaje", "").strip()
+        respuesta_a_id = request.form.get("respuesta_a_id", type=int)
         imagen = None
         video = None
         archivo = request.files.get("imagen")
@@ -651,12 +657,16 @@ def chat(emisor_id, receptor_id):
             video = f"uploads/{filename}"
 
         if contenido or imagen or video:
+            respuesta = Mensaje.query.filter_by(id=respuesta_a_id).first() if respuesta_a_id else None
+            if respuesta and {respuesta.emisor_id, respuesta.receptor_id} != {emisor.id, receptor.id}:
+                respuesta = None
             nuevo_mensaje = Mensaje(
                 emisor_id=emisor.id,
                 receptor_id=receptor.id,
                 contenido=contenido,
                 imagen=imagen,
                 video=video,
+                respuesta_a_id=respuesta.id if respuesta else None,
             )
             db.session.add(nuevo_mensaje)
             db.session.commit()
