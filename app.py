@@ -205,7 +205,7 @@ with app.app_context():
             connection.execute(text('ALTER TABLE usuario ADD COLUMN foto_data TEXT'))
     if 'telefono_publico' not in {column['name'] for column in inspect(db.engine).get_columns('usuario')}:
         with db.engine.begin() as connection:
-            connection.execute(text('ALTER TABLE usuario ADD COLUMN telefono_publico BOOLEAN NOT NULL DEFAULT 0'))
+            connection.execute(text('ALTER TABLE usuario ADD COLUMN telefono_publico BOOLEAN NOT NULL DEFAULT FALSE'))
 
 @app.route("/")
 def index():
