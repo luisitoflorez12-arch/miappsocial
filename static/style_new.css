@@ -2025,12 +2025,32 @@ header { background: #0d1b2a; }
 .form-control::placeholder { color: #75849a; }
 .form-control:focus { border-color: #42a5f5; box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.16); }
 .form-label { color: #d9e7f6; }
+.optional-label { color: #8d9bb0; font-size: 0.8em; font-weight: 400; }
+.privacy-options { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.65rem; }
+.privacy-options label { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.65rem; border: 1px solid #40536c; border-radius: 6px; color: #c8d7e8; font: 0.82rem 'Segoe UI', sans-serif; cursor: pointer; }
+.privacy-options input { accent-color: #1877f2; }
+.privacy-options label:has(input:checked) { border-color: #42a5f5; background: #183452; color: #edf2f7; }
 .file-label { background: #183452; color: #8dcbff; }
 .file-label:hover { background: #1877f2; color: white; }
 
 /* Compact publish bar from the supplied reference. */
 .composer-card { margin-bottom: 1.2rem; }
 .composer-card .card-body { padding: 0.85rem 1rem; }
+.composer-launcher { display: grid; grid-template-columns: 46px minmax(0, 1fr) 38px; align-items: center; gap: 0.65rem; cursor: pointer; }
+.composer-launch-text { min-width: 0; overflow: hidden; padding: 0.72rem 1rem; border-radius: 24px; background: #303237; color: #b6b8bd; font: 1.05rem/1.35 'Segoe UI', sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+.composer-launch-arrow { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: #183452; color: #8dcbff; font: 1.35rem 'Segoe UI', sans-serif; }
+.composer-modal[hidden] { display: none; }
+.composer-modal { position: fixed; inset: 0; z-index: 1500; display: grid; place-items: center; padding: 1rem; background: rgba(3, 9, 16, 0.72); }
+.composer-panel { width: min(100%, 560px); max-height: min(700px, calc(100vh - 2rem)); overflow: auto; border: 1px solid #40536c; border-radius: 8px; background: #151d28; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45); }
+.composer-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.2rem; border-bottom: 1px solid #2b3b50; }
+.composer-panel-header h2 { margin: 0; color: #edf2f7; font-size: 1.15rem; }
+.composer-close { display: grid; width: 32px; height: 32px; place-items: center; border: 0; border-radius: 50%; background: #202d3e; color: #c9d7e6; cursor: pointer; font-size: 1.25rem; }
+.composer-editor { display: grid; gap: 1rem; padding: 1.2rem; }
+.composer-editor .composer-input { min-height: 130px; resize: vertical; border: 1px solid #40536c !important; border-radius: 8px !important; background: #0f1722 !important; }
+.composer-editor-tools { display: flex; align-items: center; gap: 0.6rem; }
+.composer-file-hint { color: #8d9bb0; font: 0.82rem 'Segoe UI', sans-serif; }
+.composer-publish-button { width: 100%; min-height: 42px; }
+.composer-previews { width: 100%; grid-column: auto; }
 .quick-composer { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 0.65rem; }
 .composer-avatar { width: 46px; height: 46px; flex-basis: 46px; border: 0; background: #344252; }
 .composer-avatar-fallback { color: #b9dfff; }
@@ -2039,9 +2059,10 @@ header { background: #0d1b2a; }
 .composer-tools { display: flex; align-items: center; gap: 0.6rem; }
 .composer-tool, .composer-submit { display: grid; width: 38px; height: 38px; place-items: center; border: 0; border-radius: 9px; cursor: pointer; font: 700 1.45rem/1 'Segoe UI', sans-serif; transition: transform 0.2s ease, filter 0.2s ease; }
 .composer-tool:hover, .composer-submit:hover { transform: translateY(-2px) scale(1.04); filter: brightness(1.15); }
-.composer-image-tool { color: #35bc71; }
-.composer-video-tool { color: #ff4f7b; }
-.composer-submit { background: #1877f2; color: white; font-size: 1.25rem; }
+.composer-image-tool, .composer-video-tool { border-radius: 50%; background: #e7f3ff; color: #40536c; font-size: 1.15rem; }
+.composer-image-tool { color: #49657c; }
+.composer-video-tool { background: #e6f5f2; color: #4d6870; }
+.composer-submit { background: #1877f2; color: white; font-size: 1.05rem; box-shadow: 0 5px 12px rgba(24, 119, 242, 0.3); }
 .composer-previews { grid-column: 2 / -1; width: 100%; }
 .composer-previews #preview-container, .composer-previews .video-preview-container { margin-top: 0.65rem !important; }
 .feed-title { color: #edf2f7; }
@@ -2076,12 +2097,24 @@ header { background: #0d1b2a; }
 .group-empty-chat span { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 14px; background: #1877f2; color: white; font: 700 1.4rem 'Segoe UI', sans-serif; }
 
 @media (max-width: 600px) {
+    .composer-launcher { grid-template-columns: 40px minmax(0, 1fr) 32px; gap: 0.45rem; }
+    .composer-launch-text { padding: 0.6rem 0.8rem; font-size: 0.88rem; }
+    .composer-launch-arrow { width: 32px; height: 32px; font-size: 1.1rem; }
+    .composer-modal { align-items: end; padding: 0; }
+    .composer-panel { width: 100%; max-height: 92dvh; border-right: 0; border-bottom: 0; border-left: 0; border-radius: 14px 14px 0 0; }
+    .composer-panel-header { padding: 0.8rem 1rem; }
+    .composer-editor { gap: 0.75rem; padding: 0.9rem; }
+    .composer-editor .composer-input { min-height: 120px; font-size: 0.95rem !important; }
+    .composer-editor-tools { min-height: 38px; }
+    .composer-publish-button { min-height: 42px; }
     .quick-composer { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 0.45rem; }
     .composer-card .card-body { padding: 0.7rem; }
     .composer-avatar { width: 40px; height: 40px; flex-basis: 40px; }
     .composer-input { min-height: 40px; padding: 0.55rem 0.8rem !important; font-size: 0.9rem !important; }
     .composer-tools { gap: 0.1rem; }
     .composer-tool, .composer-submit { width: 30px; height: 34px; font-size: 1.15rem; }
+    .composer-image-tool, .composer-video-tool { font-size: 0.95rem; }
+    .composer-submit { width: 34px; height: 34px; border-radius: 8px; }
     .messages-page { padding: 1.4rem 0.75rem 5rem; }
     .messages-heading { align-items: flex-start; flex-direction: column; gap: 0.8rem; }
     .messages-heading-actions { width: 100%; justify-content: space-between; }
@@ -2096,6 +2129,14 @@ header { background: #0d1b2a; }
     .chat-form .input-group { gap: 0.4rem; }
     .chat-form .input-group .btn { min-width: 74px; padding: 0.65rem 0.5rem; }
     .chat-form .form-control { min-width: 0; min-height: 42px; }
+}
+
+@media (max-width: 380px) {
+    .quick-composer { grid-template-columns: 36px minmax(0, 1fr); align-items: center; }
+    .composer-avatar { width: 36px; height: 36px; flex-basis: 36px; }
+    .composer-tools { grid-column: 2; justify-content: flex-end; margin-top: 0.15rem; }
+    .composer-input { min-height: 38px; font-size: 0.84rem !important; }
+    .composer-previews { grid-column: 1 / -1; }
 }
 
 /* Shared mobile layout for every template. */
@@ -2181,6 +2222,60 @@ header { background: #0d1b2a; }
     .messages-heading-actions .messages-total { max-width: 100%; }
     .messages-heading-actions .btn { white-space: nowrap; }
     .conversation-list .action-menu { max-width: calc(100vw - 2rem); }
+}
+
+.group-chat-form .input-group { min-width: 0; }
+.group-chat-form .chat-image-button { flex: 0 0 42px; }
+.group-file-preview { margin-top: 0.55rem; padding: 0.45rem 0.65rem; overflow: hidden; border-left: 3px solid #1877f2; border-radius: 4px; background: #172b43; color: #a9d8ff; font: 0.78rem 'Segoe UI', sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+.group-file-preview[hidden] { display: none; }
+
+@media (max-width: 600px) {
+    .group-chat-form .input-group { display: grid; grid-template-columns: 32px 32px minmax(0, 1fr) auto; gap: 0.3rem; align-items: center; }
+    .group-chat-form .chat-image-button { width: 32px; min-width: 32px; height: 36px; flex-basis: 32px; border-radius: 8px; font-size: 1rem; }
+    .group-chat-form .form-control { width: 100%; min-width: 0; min-height: 38px; padding: 0.55rem 0.65rem; font-size: 0.86rem; }
+    .group-chat-form .btn { min-width: 58px; min-height: 36px; padding: 0.5rem 0.55rem; font-size: 0.76rem; }
+    .group-file-preview { max-width: 100%; }
+    .group-header-mark { width: 30px; height: 30px; flex: 0 0 30px; }
+}
+
+/* Final viewport guardrails: stable edges and compact controls on phones. */
+html { width: 100%; min-height: 100%; overflow-x: hidden; }
+body { width: 100%; min-width: 0; min-height: 100vh; overflow-x: hidden; }
+*, *::before, *::after { max-width: 100%; }
+
+@media (max-width: 600px) {
+    header { width: 100%; overflow: hidden; }
+    header:not(.messages-header) { padding: 0.65rem 0; }
+    header:not(.messages-header) > .logo,
+    header:not(.messages-header) > .nav-links { min-width: 0; }
+    header:not(.messages-header) > .logo { gap: 0.45rem; font-size: 1rem; }
+    header:not(.messages-header) > .logo .logo-mark { width: 34px; height: 34px; flex: 0 0 34px; }
+    header:not(.messages-header) > .nav-links { gap: 0.2rem; }
+    header:not(.messages-header) > .nav-links a { padding: 0.35rem 0.45rem; font-size: 0.7rem; }
+
+    main.container { width: 100%; max-width: 100%; padding-left: 0.7rem; padding-right: 0.7rem; }
+    .intro h1 { max-width: 100%; font-size: clamp(1.65rem, 8vw, 2.2rem); line-height: 1.1; }
+    .intro p { max-width: 32rem; }
+    main.container > .actions { width: 100%; max-width: 330px; margin-left: auto; margin-right: auto; }
+    main.container > .actions .btn { min-height: 38px; flex: 1 1 0; padding: 0.55rem 0.6rem; font-size: 0.82rem; }
+
+    .messages-page, .group-create-page, .profile-page, .admin-page { overflow-x: clip; }
+    .messages-heading h1 { max-width: 100%; overflow-wrap: anywhere; }
+    .messages-heading-actions .btn { min-height: 36px; padding: 0.5rem 0.65rem; font-size: 0.78rem; }
+    .profile-pic { width: 112px; height: 112px; }
+    .actions .btn { min-height: 36px; }
+    .group-form { width: 100%; box-sizing: border-box; }
+    .member-option { min-width: 0; }
+    .member-option > span:last-child { min-width: 0; overflow: hidden; }
+    .member-option strong, .member-option small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .chat-header { width: 100%; box-sizing: border-box; }
+    .chat-header-person { min-width: 0; }
+    .chat-search { width: min(42vw, 150px); flex: 0 1 150px; }
+    .chat-messages { width: 100%; box-sizing: border-box; overflow-x: hidden; }
+    .message > div { max-width: 100%; }
+    .bubble { max-width: min(88%, 310px); }
+    .chat-input-area, .chat-form, .chat-form .input-group { width: 100%; box-sizing: border-box; min-width: 0; }
 }
 .mb-2 { margin-bottom: 1rem; }
 .mb-3 { margin-bottom: 1.5rem; }

@@ -40,10 +40,12 @@
                             <span class="label">✍️ Biografía</span>
                             <p>{{ usuario.bio if usuario.bio else "Este usuario aún no ha escrito su biografía." }}</p>
                         </div>
-                        <div class="info-item">
-                            <span class="label">📱 Teléfono</span>
-                            <p>{{ usuario.telefono }}</p>
-                        </div>
+                        {% if current_user_id == usuario.id or usuario.telefono_publico %}
+                            <div class="info-item">
+                                <span class="label">📱 Teléfono</span>
+                                <p>{% if usuario.telefono and not usuario.telefono.startswith('none') %}{{ usuario.telefono }}{% else %}No registrado{% endif %}</p>
+                            </div>
+                        {% endif %}
                     </div>
 
                     <!-- Botones de acción -->

@@ -88,6 +88,7 @@ db = SQLAlchemy(app)
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     telefono = db.Column(db.String(20), unique=True, nullable=False)
+    telefono_publico = db.Column(db.Boolean, default=False, nullable=False)
     usuario = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
 
@@ -202,6 +203,9 @@ with app.app_context():
     if 'foto_data' not in {column['name'] for column in inspect(db.engine).get_columns('usuario')}:
         with db.engine.begin() as connection:
             connection.execute(text('ALTER TABLE usuario ADD COLUMN foto_data TEXT'))
+    if 'telefono_publico' not in {column['name'] for column in inspect(db.engine).get_columns('usuario')}:
+        with db.engine.begin() as connection:
+            connection.execute(text('ALTER TABLE usuario ADD COLUMN telefono_publico BOOLEAN NOT NULL DEFAULT 0'))
 
 @app.route("/")
 def index():
@@ -267,7 +271,7 @@ def registro():
         password = request.form.get("password", "")
 
         # Validaciones
-        if not telefono.isdigit():
+        if not telefono or not telefono.isdigit():
             flash("El número de teléfono debe contener solo dígitos.")
             return redirect(url_for("registro"))
 
@@ -293,7 +297,7 @@ def registro():
 
         # Guardar usuario con contraseña encriptada
         hash = generate_password_hash(password)
-        nuevo = Usuario(telefono=telefono, usuario=usuario, password=hash)
+        nuevo = Usuario(telefono=telefono, telefono_publico=False, usuario=usuario, password=hash)
         db.session.add(nuevo)
         try:
             db.session.commit()
@@ -618,6 +622,15 @@ def editar_perfil(user_id):
     if request.method == "POST":
         usuario.nombre = request.form.get("nombre", usuario.nombre)
         usuario.bio = request.form.get("bio", usuario.bio)
+        telefono = request.form.get("telefono", "").strip()
+        if not telefono or not telefono.isdigit():
+            flash("El teléfono debe contener solo dígitos.", "danger")
+            return redirect(url_for("editar_perfil", user_id=user_id))
+        if telefono and telefono != usuario.telefono and Usuario.query.filter_by(telefono=telefono).first():
+            flash("Ese número de teléfono ya está registrado.", "danger")
+            return redirect(url_for("editar_perfil", user_id=user_id))
+        usuario.telefono = telefono
+        usuario.telefono_publico = request.form.get("telefono_publico") == "publico"
         foto = request.files.get("foto")
         if foto and foto.filename:
             if not validate_upload(foto, IMAGE_EXTENSIONS, 4 * 1024 * 1024):
@@ -764,15 +777,16 @@ def crear_grupo():
     user_id = session.get('user_id')
     if not user_id:
         return redirect(url_for("login"))
-    usuarios = Usuario.query.filter(Usuario.id != user_id).order_by(Usuario.usuario.asc()).all()
+    amigos_ids = [item.seguido_id for item in Seguidor.query.filter_by(seguidor_id=user_id).all()]
+    usuarios = Usuario.query.filter(Usuario.id.in_(amigos_ids)).order_by(Usuario.usuario.asc()).all() if amigos_ids else []
     if request.method == "POST":
         nombre = request.form.get("nombre", "").strip()
         miembros_ids = {int(value) for value in request.form.getlist("miembros") if value.isdigit()}
-        miembros_ids.discard(user_id)
+        miembros_ids.intersection_update(amigos_ids)
         if not nombre:
             flash("Escribe un nombre para el grupo.", "danger")
         elif not miembros_ids:
-            flash("Selecciona al menos una persona para el grupo.", "danger")
+            flash("Selecciona al menos un amigo agregado para el grupo.", "danger")
         else:
             grupo = Grupo(nombre=nombre[:100], creador_id=user_id)
             db.session.add(grupo)
@@ -797,8 +811,32 @@ def grupo_chat(grupo_id, user_id):
         return redirect(url_for("mensajes", user_id=user_id))
     if request.method == "POST":
         contenido = request.form.get("mensaje", "").strip()
-        if contenido:
-            db.session.add(Mensaje(emisor_id=user_id, receptor_id=user_id, grupo_id=grupo_id, contenido=contenido))
+        imagen = None
+        video = None
+        archivo = request.files.get("imagen")
+        archivo_video = request.files.get("video")
+
+        if archivo and archivo.filename:
+            if not validate_upload(archivo, IMAGE_EXTENSIONS, 8 * 1024 * 1024):
+                flash("La imagen debe ser válida y no superar 8 MB.", "danger")
+                return redirect(url_for("grupo_chat", grupo_id=grupo_id, user_id=user_id))
+            filename = secure_filename(f"grupo_{grupo_id}_{user_id}_{datetime.now().timestamp()}_{archivo.filename}")
+            archivo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            imagen = f"uploads/{filename}"
+
+        if archivo_video and archivo_video.filename:
+            if not validate_upload(archivo_video, VIDEO_EXTENSIONS, 16 * 1024 * 1024):
+                flash("El video debe ser válido y no superar 16 MB.", "danger")
+                return redirect(url_for("grupo_chat", grupo_id=grupo_id, user_id=user_id))
+            filename = secure_filename(f"grupo_video_{grupo_id}_{user_id}_{datetime.now().timestamp()}_{archivo_video.filename}")
+            archivo_video.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            video = f"uploads/{filename}"
+
+        if contenido or imagen or video:
+            db.session.add(Mensaje(
+                emisor_id=user_id, receptor_id=user_id, grupo_id=grupo_id,
+                contenido=contenido, imagen=imagen, video=video,
+            ))
             db.session.commit()
         return redirect(url_for("grupo_chat", grupo_id=grupo_id, user_id=user_id))
     mensajes_grupo = Mensaje.query.filter_by(grupo_id=grupo_id).order_by(Mensaje.fecha.asc(), Mensaje.id.asc()).all()

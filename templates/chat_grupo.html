@@ -18,20 +18,44 @@
                 <div class="chat-messages" id="mensajesArea">
                     {% for mensaje in mensajes %}
                         <div class="message {% if mensaje.emisor_id == user_id %}sent{% else %}received{% endif %}">
-                            <div><small class="text-muted group-sender">{{ mensaje.emisor.usuario }}</small><div class="bubble"><span class="message-text">{{ mensaje.contenido }}</span></div></div>
+                            <div><small class="text-muted group-sender">{{ mensaje.emisor.usuario }}</small><div class="bubble">
+                                {% if mensaje.imagen %}<img class="message-image" src="{{ url_for('static', filename=mensaje.imagen) }}" alt="Imagen enviada al grupo">{% endif %}
+                                {% if mensaje.video %}<video class="message-video" controls preload="metadata"><source src="{{ url_for('static', filename=mensaje.video) }}"></video>{% endif %}
+                                {% if mensaje.contenido %}<span class="message-text">{{ mensaje.contenido }}</span>{% endif %}
+                            </div></div>
                         </div>
                     {% else %}
                         <div class="group-empty-chat"><span>#</span><p>Este grupo está listo para su primer mensaje.</p></div>
                     {% endfor %}
                 </div>
                 <div class="chat-input-area">
-                    <form method="POST" class="chat-form">
-                        <div class="input-group"><input type="text" name="mensaje" class="form-control" placeholder="Escribe al grupo..." autocomplete="off" required><button class="btn btn-primary" type="submit">Enviar <span aria-hidden="true">→</span></button></div>
+                    <form method="POST" enctype="multipart/form-data" class="chat-form group-chat-form">
+                        <div class="input-group">
+                            <label class="chat-image-button" for="imagen-grupo" title="Adjuntar imagen" aria-label="Adjuntar imagen">▣</label>
+                            <input type="file" id="imagen-grupo" name="imagen" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+                            <label class="chat-image-button chat-video-button" for="video-grupo" title="Adjuntar video" aria-label="Adjuntar video">▶</label>
+                            <input type="file" id="video-grupo" name="video" accept="video/mp4,video/webm,video/quicktime,video/ogg" hidden>
+                            <input type="text" name="mensaje" class="form-control" placeholder="Escribe al grupo..." autocomplete="off">
+                            <button class="btn btn-primary" type="submit">Enviar <span aria-hidden="true">→</span></button>
+                        </div>
+                        <div id="group-file-preview" class="group-file-preview" hidden></div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-    <script>setTimeout(function () { const area = document.getElementById('mensajesArea'); area.scrollTop = area.scrollHeight; }, 100);</script>
+    <script>
+        setTimeout(function () { const area = document.getElementById('mensajesArea'); area.scrollTop = area.scrollHeight; }, 100);
+        const groupImage = document.getElementById('imagen-grupo');
+        const groupVideo = document.getElementById('video-grupo');
+        const groupPreview = document.getElementById('group-file-preview');
+        function showGroupFile(input, label) {
+            if (!input.files.length) return;
+            groupPreview.textContent = label + ': ' + input.files[0].name;
+            groupPreview.hidden = false;
+        }
+        groupImage.addEventListener('change', () => showGroupFile(groupImage, 'Imagen seleccionada'));
+        groupVideo.addEventListener('change', () => showGroupFile(groupVideo, 'Video seleccionado'));
+    </script>
 </body>
 </html>

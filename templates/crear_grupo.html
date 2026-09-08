@@ -16,7 +16,7 @@
     <main class="container group-create-page">
         <p class="eyebrow">Una conversación para compartir</p>
         <h1>Crear un grupo</h1>
-        <p class="group-create-intro">Ponle un nombre y elige con quién quieres conversar.</p>
+        <p class="group-create-intro">Ponle un nombre y elige entre tus amigos agregados.</p>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% for category, message in messages %}<div class="alert alert-{{ category or 'danger' }}">{{ message }}</div>{% endfor %}
         {% endwith %}
@@ -34,7 +34,7 @@
                         </label>
                     {% endfor %}
                 {% else %}
-                    <p class="group-create-intro">Todavía no hay otras personas registradas.</p>
+                    <p class="group-create-intro">Todavía no tienes amigos agregados para crear un grupo.</p>
                 {% endif %}
             </fieldset>
             <button class="btn btn-primary group-submit" type="submit">Crear grupo <span aria-hidden="true">→</span></button>
