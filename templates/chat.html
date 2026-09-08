@@ -55,12 +55,6 @@
                                                 Tu navegador no puede reproducir este video.
                                             </video>
                                         {% endif %}
-                                        {% if m.audio %}
-                                            <audio class="message-audio" controls preload="metadata">
-                                                <source src="{{ url_for('static', filename=m.audio) }}">
-                                                Tu navegador no puede reproducir este audio.
-                                            </audio>
-                                        {% endif %}
                                         {% if m.contenido %}
                                             <span class="message-text">{{ m.contenido }}</span>
                                         {% endif %}
@@ -99,8 +93,6 @@
                             <input type="file" id="imagen-chat" name="imagen" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
                             <label class="chat-image-button chat-video-button" for="video-chat" title="Adjuntar video">🎥</label>
                             <input type="file" id="video-chat" name="video" accept="video/mp4,video/webm,video/quicktime,video/ogg" hidden>
-                            <label class="chat-image-button chat-audio-button" for="audio-chat" title="Adjuntar audio">🎙</label>
-                            <input type="file" id="audio-chat" name="audio" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac,audio/webm,.mp3,.wav,.ogg,.m4a,.aac" hidden>
                             <input type="text" name="mensaje" class="form-control" placeholder="Escribe tu mensaje...">
                             <button class="btn btn-primary" type="submit" data-loading-text="Enviando...">
                                 📤 Enviar
@@ -182,9 +174,7 @@
             const selectedImage = document.getElementById('selected-image');
             const removeButton = document.getElementById('remove-selected-file');
             selectedImage.textContent = input.files.length ? `${label}: ${input.files[0].name}` : 'Puedes enviar texto, una foto, un video o combinarlos.';
-            removeButton.hidden = !input.files.length
-                && !document.getElementById('video-chat').files.length
-                && !document.getElementById('audio-chat').files.length;
+            removeButton.hidden = !input.files.length && !document.getElementById('video-chat').files.length;
         }
 
         document.getElementById('imagen-chat').addEventListener('change', function() {
@@ -205,14 +195,10 @@
                 updateSelectedFile(this, 'Video seleccionado');
             });
 
-            document.getElementById('audio-chat').addEventListener('change', function() {
-                updateSelectedFile(this, 'Audio seleccionado');
-            });
 
         function clearSelectedFile() {
             document.getElementById('imagen-chat').value = '';
             document.getElementById('video-chat').value = '';
-            document.getElementById('audio-chat').value = '';
             document.getElementById('chat-image-preview-image').src = '';
             document.getElementById('chat-image-preview').hidden = true;
             updateSelectedFile(document.getElementById('imagen-chat'), 'Archivo seleccionado');

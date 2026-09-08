@@ -97,8 +97,6 @@
         </div>
         
         <!-- Feed de posts -->
-        <h2 class="feed-title">📱 Feed</h2>
-        
         {% if posts %}
             {% for post in posts %}
             <div class="post-card pressable-post" data-menu-target="post-menu-{{ post.id }}" data-comment-post="{{ post.id }}">

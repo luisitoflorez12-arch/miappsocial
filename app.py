@@ -733,10 +733,8 @@ def chat(emisor_id, receptor_id):
         respuesta_a_id = request.form.get("respuesta_a_id", type=int)
         imagen = None
         video = None
-        audio = None
         archivo = request.files.get("imagen")
         archivo_video = request.files.get("video")
-        archivo_audio = request.files.get("audio")
 
         if archivo and archivo.filename:
             if not validate_upload(archivo, IMAGE_EXTENSIONS, 8 * 1024 * 1024):
@@ -759,15 +757,7 @@ def chat(emisor_id, receptor_id):
             archivo_video.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             video = f"uploads/{filename}"
 
-        if archivo_audio and archivo_audio.filename:
-            if not validate_upload(archivo_audio, AUDIO_EXTENSIONS, 12 * 1024 * 1024):
-                flash("El audio debe ser válido y no superar 12 MB.", "danger")
-                return redirect(url_for("chat", emisor_id=emisor.id, receptor_id=receptor.id))
-            filename = secure_filename(f"chat_audio_{emisor.id}_{receptor.id}_{datetime.now().timestamp()}_{archivo_audio.filename}")
-            archivo_audio.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            audio = f"uploads/{filename}"
-
-        if contenido or imagen or video or audio:
+        if contenido or imagen or video:
             respuesta = Mensaje.query.filter_by(id=respuesta_a_id).first() if respuesta_a_id else None
             if respuesta and {respuesta.emisor_id, respuesta.receptor_id} != {emisor.id, receptor.id}:
                 respuesta = None
@@ -777,7 +767,6 @@ def chat(emisor_id, receptor_id):
                 contenido=contenido,
                 imagen=imagen,
                 video=video,
-                audio=audio,
                 respuesta_a_id=respuesta.id if respuesta else None,
             )
             db.session.add(nuevo_mensaje)
@@ -889,10 +878,8 @@ def grupo_chat(grupo_id, user_id):
         contenido = request.form.get("mensaje", "").strip()
         imagen = None
         video = None
-        audio = None
         archivo = request.files.get("imagen")
         archivo_video = request.files.get("video")
-        archivo_audio = request.files.get("audio")
 
         if archivo and archivo.filename:
             if not validate_upload(archivo, IMAGE_EXTENSIONS, 8 * 1024 * 1024):
@@ -910,19 +897,10 @@ def grupo_chat(grupo_id, user_id):
             archivo_video.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             video = f"uploads/{filename}"
 
-        if archivo_audio and archivo_audio.filename:
-            if not validate_upload(archivo_audio, AUDIO_EXTENSIONS, 12 * 1024 * 1024):
-                flash("El audio debe ser válido y no superar 12 MB.", "danger")
-                return redirect(url_for("grupo_chat", grupo_id=grupo_id, user_id=user_id))
-            filename = secure_filename(f"grupo_audio_{grupo_id}_{user_id}_{datetime.now().timestamp()}_{archivo_audio.filename}")
-            archivo_audio.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            audio = f"uploads/{filename}"
-
-        if contenido or imagen or video or audio:
+        if contenido or imagen or video:
             mensaje_grupo = Mensaje(
                 emisor_id=user_id, receptor_id=user_id, grupo_id=grupo_id,
                 contenido=contenido, imagen=imagen, video=video,
-                audio=audio,
             )
             db.session.add(mensaje_grupo)
             db.session.commit()

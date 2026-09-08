@@ -21,7 +21,6 @@
                             <div><small class="text-muted group-sender">{{ mensaje.emisor.usuario }}</small><div class="bubble">
                                 {% if mensaje.imagen %}<img class="message-image" src="{{ url_for('static', filename=mensaje.imagen) }}" alt="Imagen enviada al grupo">{% endif %}
                                 {% if mensaje.video %}<video class="message-video" controls preload="metadata"><source src="{{ url_for('static', filename=mensaje.video) }}"></video>{% endif %}
-                                {% if mensaje.audio %}<audio class="message-audio" controls preload="metadata"><source src="{{ url_for('static', filename=mensaje.audio) }}">Tu navegador no puede reproducir este audio.</audio>{% endif %}
                                 {% if mensaje.contenido %}<span class="message-text">{{ mensaje.contenido }}</span>{% endif %}
                             </div></div>
                         </div>
@@ -36,8 +35,6 @@
                             <input type="file" id="imagen-grupo" name="imagen" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
                             <label class="chat-image-button chat-video-button" for="video-grupo" title="Adjuntar video" aria-label="Adjuntar video">▶</label>
                             <input type="file" id="video-grupo" name="video" accept="video/mp4,video/webm,video/quicktime,video/ogg" hidden>
-                            <label class="chat-image-button chat-audio-button" for="audio-grupo" title="Adjuntar audio" aria-label="Adjuntar audio">🎙</label>
-                            <input type="file" id="audio-grupo" name="audio" accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac,audio/webm,.mp3,.wav,.ogg,.m4a,.aac" hidden>
                             <input type="text" name="mensaje" class="form-control" placeholder="Escribe al grupo..." autocomplete="off">
                             <button class="btn btn-primary" type="submit">Enviar <span aria-hidden="true">→</span></button>
                         </div>
@@ -51,7 +48,6 @@
         setTimeout(function () { const area = document.getElementById('mensajesArea'); area.scrollTop = area.scrollHeight; }, 100);
         const groupImage = document.getElementById('imagen-grupo');
         const groupVideo = document.getElementById('video-grupo');
-        const groupAudio = document.getElementById('audio-grupo');
         const groupPreview = document.getElementById('group-file-preview');
         function showGroupFile(input, label) {
             if (!input.files.length) return;
@@ -60,7 +56,6 @@
         }
         groupImage.addEventListener('change', () => showGroupFile(groupImage, 'Imagen seleccionada'));
         groupVideo.addEventListener('change', () => showGroupFile(groupVideo, 'Video seleccionado'));
-        groupAudio.addEventListener('change', () => showGroupFile(groupAudio, 'Audio seleccionado'));
     </script>
 </body>
 </html>
