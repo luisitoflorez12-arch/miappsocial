@@ -161,9 +161,16 @@
     </div>
     <script>
         const floatingHome = document.getElementById('profile-floating-home');
-        window.addEventListener('scroll', function() {
-            floatingHome.classList.toggle('is-visible', window.scrollY > 420);
-        }, { passive: true });
+
+        function toggleFloatingHome() {
+            if (!floatingHome) return;
+            const shouldShow = window.scrollY > 80;
+            floatingHome.classList.toggle('is-visible', shouldShow);
+            floatingHome.setAttribute('aria-hidden', String(!shouldShow));
+        }
+
+        toggleFloatingHome();
+        window.addEventListener('scroll', toggleFloatingHome, { passive: true });
 
         let pendingForm = null;
 

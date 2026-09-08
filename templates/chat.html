@@ -164,11 +164,58 @@
         });
 
         const searchInput = document.getElementById('chat-search');
-        searchInput.addEventListener('input', function() {
-            const query = this.value.trim().toLowerCase();
-            document.querySelectorAll('.message').forEach(message => {
-                message.hidden = Boolean(query) && !message.dataset.searchText.includes(query);
+        const chatInputField = document.querySelector('.chat-form input[name="mensaje"]');
+        const chatInputArea = document.querySelector('.chat-input-area');
+        const chatPage = document.querySelector('.chat-page');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const query = this.value.trim().toLowerCase();
+                document.querySelectorAll('.message').forEach(message => {
+                    message.hidden = Boolean(query) && !message.dataset.searchText.includes(query);
+                });
             });
+        }
+
+        function updateComposerPosition() {
+            if (!chatInputArea || !chatPage || window.innerWidth > 600) return;
+            if (!window.visualViewport) {
+                chatPage.classList.remove('keyboard-open');
+                chatInputArea.style.transform = '';
+                return;
+            }
+
+            const keyboardOffset = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
+            const shouldLift = keyboardOffset > 28;
+            chatPage.classList.toggle('keyboard-open', shouldLift);
+            chatInputArea.style.transform = shouldLift ? `translateY(-${Math.min(keyboardOffset, 110)}px)` : '';
+
+            if (shouldLift) {
+                setTimeout(() => {
+                    chatInputArea.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }, 120);
+            }
+        }
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateComposerPosition);
+            window.visualViewport.addEventListener('scroll', updateComposerPosition);
+        }
+
+        chatInputField?.addEventListener('focus', () => {
+            chatPage?.classList.add('is-typing');
+            setTimeout(() => {
+                if (window.innerWidth <= 600) {
+                    chatInputArea?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+            }, 120);
+        });
+
+        chatInputField?.addEventListener('blur', () => {
+            chatPage?.classList.remove('is-typing');
+            if (window.innerWidth <= 600) {
+                chatInputArea.style.transform = '';
+            }
         });
 
         // Scroll automático al último mensaje
