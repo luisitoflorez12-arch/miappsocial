@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mensajes - ComfeSocial</title>
+    <title>ChatSocial</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style_new.css') }}">
 </head>
 <body>
     <header class="messages-header">
-        <div class="container">
-            <div class="logo">
-                <span class="logo-mark" aria-hidden="true"><span class="globe-lines"></span></span>
-                <span>ComfeSocial</span>
-            </div>
+        <div class="container messages-toolbar">
+            <a href="{{ url_for('home', user_id=user_id) }}" class="messages-back-button" aria-label="Volver al inicio" title="Volver al inicio">←</a>
+            <strong class="messages-brand">ChatSocial</strong>
             <div class="header-actions">
-                <a href="{{ url_for('home', user_id=user_id) }}" class="btn btn-outline-light messages-home-button">Volver al inicio</a>
+                <label class="conversation-search" for="conversation-search">
+                    <span aria-hidden="true">⌕</span>
+                    <input type="search" id="conversation-search" placeholder="Buscar chats" autocomplete="off" aria-label="Buscar chats">
+                </label>
             </div>
         </div>
     </header>
@@ -38,7 +39,7 @@
         <section class="conversation-list">
             {% if conversaciones %}
                 {% for conversacion in conversaciones %}
-                    <div class="conversation-item pressable-conversation {% if conversacion.nuevos %}has-unread{% endif %}" data-menu-target="conversation-menu-{{ conversacion.usuario.id }}" data-href="{{ url_for('chat', emisor_id=user_id, receptor_id=conversacion.usuario.id) }}">
+                    <div class="conversation-item pressable-conversation {% if conversacion.nuevos %}has-unread{% endif %}" data-menu-target="conversation-menu-{{ conversacion.usuario.id }}" data-href="{{ url_for('chat', emisor_id=user_id, receptor_id=conversacion.usuario.id) }}" data-search-text="{{ (conversacion.usuario.usuario ~ ' ' ~ (conversacion.ultimo.contenido or ''))|lower }}">
                         <a class="conversation-link" href="{{ url_for('chat', emisor_id=user_id, receptor_id=conversacion.usuario.id) }}" aria-label="Abrir chat con {{ conversacion.usuario.usuario }}">
                             <span class="conversation-avatar">{{ conversacion.usuario.usuario.replace('@', '')[0]|upper }}</span>
                             <span class="conversation-content">
@@ -145,6 +146,13 @@
             });
             ['pointerup', 'pointerleave', 'pointercancel'].forEach(eventName => conversation.addEventListener(eventName, () => clearTimeout(pressTimer)));
             conversation.addEventListener('contextmenu', event => { event.preventDefault(); openMenu(); });
+        });
+
+        document.getElementById('conversation-search').addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            document.querySelectorAll('.conversation-item').forEach(conversation => {
+                conversation.hidden = Boolean(query) && !conversation.dataset.searchText.includes(query);
+            });
         });
     </script>
 </body>
