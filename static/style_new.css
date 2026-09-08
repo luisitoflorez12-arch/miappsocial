@@ -170,6 +170,8 @@ header .logo img {
     flex-direction: column;
     align-items: center;
     gap: 0.45rem;
+    width: min(100%, 560px);
+    padding: 0 !important;
 }
 
 .home-toolbar {
@@ -264,6 +266,8 @@ header .logo img {
 }
 
 .home-header-stack > .logout-button {
+    align-self: flex-end;
+    margin-right: 0.75rem;
     background: #151b24;
     border-color: rgba(255,255,255,0.35);
 }
@@ -1504,6 +1508,10 @@ main.container {
     font-size: 0.82rem;
 }
 
+.reply-preview[hidden] {
+    display: none;
+}
+
 .reply-preview div { display: grid; min-width: 0; }
 .reply-preview span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .reply-preview button { border: 0; background: transparent; color: inherit; font-size: 1.2rem; cursor: pointer; }
@@ -2551,7 +2559,7 @@ footer p {
     }
 
     .home-toolbar {
-        width: calc(100% - 1rem);
+        width: 100%;
         min-width: 0;
         padding: 0.45rem 0.6rem !important;
     }
