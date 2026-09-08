@@ -14,15 +14,15 @@
         {% endif %}
     </a>
     <header class="home-header">
-        <div class="container home-toolbar">
-            <a href="{{ url_for('perfil', user_id=usuario.id, current_user_id=usuario.id) }}" class="profile-avatar-link" aria-label="Abrir mi perfil" title="Mi perfil">
-                {% if usuario.foto_data or usuario.foto %}
-                    <img src="{{ usuario.foto_data or usuario.foto }}" alt="Foto de perfil de {{ usuario.usuario }}">
-                {% else %}
-                    <span>{{ usuario.usuario[0]|upper }}</span>
-                {% endif %}
-            </a>
-            <div class="home-tools">
+        <div class="container home-header-stack">
+            <div class="home-toolbar">
+                <a href="{{ url_for('perfil', user_id=usuario.id, current_user_id=usuario.id) }}" class="profile-avatar-link" aria-label="Abrir mi perfil" title="Mi perfil">
+                    {% if usuario.foto_data or usuario.foto %}
+                        <img src="{{ usuario.foto_data or usuario.foto }}" alt="Foto de perfil de {{ usuario.usuario }}">
+                    {% else %}
+                        <span>{{ usuario.usuario[0]|upper }}</span>
+                    {% endif %}
+                </a>
                 <div class="header-search" id="header-search">
                     <button type="button" class="search-toggle" id="search-toggle" aria-label="Buscar perfiles" title="Buscar perfiles" aria-expanded="false">⌕</button>
                     <div class="header-search-panel" id="header-search-panel" hidden>
@@ -31,8 +31,8 @@
                     </div>
                     <div id="searchResults" class="search-results"></div>
                 </div>
-                    <a href="/logout" class="logout-button" aria-label="Cerrar sesión" title="Cerrar sesión"><span aria-hidden="true">🚪</span></a>
             </div>
+            <a href="/logout" class="logout-button" aria-label="Cerrar sesión" title="Cerrar sesión"><span aria-hidden="true">🚪</span></a>
         </div>
     </header>
 
