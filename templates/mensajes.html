@@ -28,17 +28,18 @@
             {% endfor %}
         {% endwith %}
         <div class="messages-heading">
-            <div>
-                <p class="eyebrow">Bandeja privada</p>
-                <h1>Mis conversaciones</h1>
+            <div class="messages-title-block">
+                <p class="eyebrow">Mensajes</p>
+                <h1>Conversaciones</h1>
             </div>
             <div class="messages-heading-actions">
-                {% if unread_count %}<span class="messages-total">{{ unread_count }} nuevos</span>{% endif %}
-                <a class="btn btn-primary" href="{{ url_for('crear_grupo') }}">＋ Nuevo grupo</a>
+                {% if unread_count %}<span class="messages-total">{{ unread_count }} sin leer</span>{% endif %}
+                <a class="btn btn-primary messages-new-group" href="{{ url_for('crear_grupo') }}"><span aria-hidden="true">＋</span> Nuevo grupo</a>
             </div>
         </div>
 
-        <section class="conversation-list">
+        <section class="conversation-list" aria-label="Lista de conversaciones">
+            {% if grupos %}<p class="conversation-section-label">Grupos</p>{% endif %}
             {% for grupo_item in grupos %}
                 <div class="conversation-item group-conversation" data-href="{{ url_for('grupo_chat', grupo_id=grupo_item.grupo.id, user_id=user_id) }}" data-search-text="{{ grupo_item.grupo.nombre|lower }}">
                     <a class="conversation-link" href="{{ url_for('grupo_chat', grupo_id=grupo_item.grupo.id, user_id=user_id) }}" aria-label="Abrir grupo {{ grupo_item.grupo.nombre }}">
@@ -51,6 +52,7 @@
                     </a>
                 </div>
             {% endfor %}
+            {% if conversaciones %}<p class="conversation-section-label">Personas</p>{% endif %}
             {% if conversaciones %}
                 {% for conversacion in conversaciones %}
                     <div class="conversation-item pressable-conversation {% if conversacion.nuevos %}has-unread{% endif %}" data-menu-target="conversation-menu-{{ conversacion.usuario.id }}" data-href="{{ url_for('chat', emisor_id=user_id, receptor_id=conversacion.usuario.id) }}" data-search-text="{{ (conversacion.usuario.usuario ~ ' ' ~ (conversacion.ultimo.contenido or ''))|lower }}">
@@ -75,7 +77,7 @@
                         </div>
                     </div>
                 {% endfor %}
-            {% else %}
+            {% elif not grupos %}
                 <div class="empty-conversations">
                     <span class="empty-chat-icon">💬</span>
                     <h2>Aún no tienes conversaciones</h2>

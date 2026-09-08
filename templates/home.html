@@ -23,12 +23,14 @@
                         <span>{{ usuario.usuario[0]|upper }}</span>
                     {% endif %}
                 </a>
-                <div class="header-search" id="header-search">
-                    <button type="button" class="search-toggle" id="search-toggle" aria-label="Buscar perfiles" title="Buscar perfiles" aria-expanded="false">⌕</button>
+                <div class="home-toolbar-actions">
+                    <div class="header-search" id="header-search">
+                        <button type="button" class="search-toggle" id="search-toggle" aria-label="Buscar perfiles" title="Buscar perfiles" aria-expanded="false">⌕</button>
+                    </div>
+                    <a class="notifications-link" href="{{ url_for('notificaciones', user_id=user_id) }}" aria-label="Abrir notificaciones" title="Notificaciones">🔔{% if notification_count %}<span>{{ notification_count }}</span>{% endif %}</a>
+                    <a href="/logout" class="logout-button" aria-label="Cerrar sesión" title="Cerrar sesión" onclick="return window.confirm('¿Seguro que quieres cerrar sesión?');"><span aria-hidden="true">🚪</span></a>
                 </div>
-                <a class="notifications-link" href="{{ url_for('notificaciones', user_id=user_id) }}" aria-label="Abrir notificaciones" title="Notificaciones">🔔{% if notification_count %}<span>{{ notification_count }}</span>{% endif %}</a>
             </div>
-            <a href="/logout" class="logout-button" aria-label="Cerrar sesión" title="Cerrar sesión" onclick="return window.confirm('¿Seguro que quieres cerrar sesión?');"><span aria-hidden="true">🚪</span></a>
         </div>
     </header>
 
@@ -46,7 +48,7 @@
         </div>
     </div>
 
-    <div class="container" style="padding-top: 2rem; padding-bottom: 2rem;">
+    <main class="feed-page container">
         <!-- Mostrar mensajes de flash -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -99,7 +101,7 @@
         
         {% if posts %}
             {% for post in posts %}
-            <div class="post-card pressable-post" data-menu-target="post-menu-{{ post.id }}">
+            <div class="post-card pressable-post" data-menu-target="post-menu-{{ post.id }}" data-comment-post="{{ post.id }}">
                 <div class="card-body">
                     {% if post.autor_id == user_id %}
                         <button class="post-menu-trigger" type="button" aria-label="Opciones de publicación" onclick="toggleMenu('post-menu-{{ post.id }}')">⋮</button>
@@ -145,21 +147,26 @@
                         </video>
                     {% endif %}
 
-                    <!-- Botón de like -->
-                    <div style="margin-top: 1rem;">
-                        {% if post.id in user_likes %}
-                            <a href="/like/{{ post.id }}/{{ user_id }}" class="btn btn-outline-danger liked like-button">
-                                ❤️ {{ post.likes_count|length }} Me gusta
-                            </a>
-                        {% else %}
-                            <a href="/like/{{ post.id }}/{{ user_id }}" class="btn btn-outline-danger like-button">
-                                🤍 {{ post.likes_count|length }} Me gusta
-                            </a>
-                        {% endif %}
+                    <div class="post-engagement-summary">
+                        <span>❤️ {{ post.likes_count|length }}</span>
+                        <button type="button" class="comment-count-link" onclick="focusComment({{ post.id }})">{{ post.comentarios|length }} comentarios</button>
                     </div>
 
-                    <div class="comments-section">
-                        <h3>Comentarios ({{ post.comentarios|length }})</h3>
+                    <div class="post-actions">
+                        {% if post.id in user_likes %}
+                            <a href="/like/{{ post.id }}/{{ user_id }}" class="post-action liked like-button">
+                                ❤️ <span>Me gusta</span>
+                            </a>
+                        {% else %}
+                            <a href="/like/{{ post.id }}/{{ user_id }}" class="post-action like-button">
+                                ♡ <span>Me gusta</span>
+                            </a>
+                        {% endif %}
+                        <button type="button" class="post-action post-comment-action" aria-expanded="false" onclick="focusComment({{ post.id }})">◯ <span>Comentar</span></button>
+                    </div>
+
+                    <div class="comments-section" id="comments-{{ post.id }}">
+                        <h3>Comentarios</h3>
                         {% for comentario in post.comentarios %}
                             <div class="comment-item">
                                 <strong>{{ comentario.usuario.usuario }}</strong>
@@ -179,7 +186,7 @@
                 📝 No hay posts aún. ¡Sé el primero en publicar algo increíble!
             </div>
         {% endif %}
-    </div>
+    </main>
 
     <div class="confirm-dialog" id="confirm-dialog" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-title">
         <div class="confirm-dialog-card">
@@ -210,6 +217,19 @@
             const form = pendingForm;
             closeConfirmation();
             if (form) form.submit();
+        }
+
+        function focusComment(postId) {
+            const card = document.querySelector(`[data-comment-post="${postId}"]`);
+            const input = card ? card.querySelector('.comment-form input') : null;
+            const comments = card ? card.querySelector('.comments-section') : null;
+            const toggle = card ? card.querySelector('.post-comment-action') : null;
+            if (comments) comments.classList.add('is-open');
+            if (toggle) toggle.setAttribute('aria-expanded', 'true');
+            if (input) {
+                input.focus({ preventScroll: true });
+                input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
 
         function openComposer() {
