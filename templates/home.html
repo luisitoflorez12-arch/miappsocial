@@ -25,17 +25,26 @@
                 </a>
                 <div class="header-search" id="header-search">
                     <button type="button" class="search-toggle" id="search-toggle" aria-label="Buscar perfiles" title="Buscar perfiles" aria-expanded="false">⌕</button>
-                    <div class="header-search-panel" id="header-search-panel" hidden>
-                        <input type="search" id="searchInput" class="form-control" placeholder="Buscar perfil..." autocomplete="off" aria-label="Buscar perfiles">
-                        <button type="button" class="btn btn-light" onclick="buscarUsuarios()">Buscar</button>
-                    </div>
-                    <div id="searchResults" class="search-results"></div>
                 </div>
                 <a class="notifications-link" href="{{ url_for('notificaciones', user_id=user_id) }}" aria-label="Abrir notificaciones" title="Notificaciones">🔔{% if notification_count %}<span>{{ notification_count }}</span>{% endif %}</a>
             </div>
             <a href="/logout" class="logout-button" aria-label="Cerrar sesión" title="Cerrar sesión" onclick="return window.confirm('¿Seguro que quieres cerrar sesión?');"><span aria-hidden="true">🚪</span></a>
         </div>
     </header>
+
+    <div class="search-modal" id="search-modal" hidden>
+        <div class="search-panel" role="dialog" aria-modal="true" aria-labelledby="search-title">
+            <div class="search-panel-header">
+                <h2 id="search-title">Buscar personas</h2>
+                <button type="button" class="search-close" id="search-close" aria-label="Cerrar búsqueda">×</button>
+            </div>
+            <div class="search-form-row">
+                <input type="search" id="searchInput" class="form-control" placeholder="Buscar por usuario o nombre..." autocomplete="off" aria-label="Buscar perfiles">
+                <button type="button" class="btn btn-primary search-submit" onclick="buscarUsuarios()">Buscar</button>
+            </div>
+            <div id="searchResults" class="search-results"></div>
+        </div>
+    </div>
 
     <div class="container" style="padding-top: 2rem; padding-bottom: 2rem;">
         <!-- Mostrar mensajes de flash -->
@@ -340,11 +349,20 @@
         }
 
         document.getElementById('search-toggle').addEventListener('click', function() {
-            const panel = document.getElementById('header-search-panel');
-            const isOpen = !panel.hidden;
-            panel.hidden = isOpen;
+            const modal = document.getElementById('search-modal');
+            const isOpen = !modal.hidden;
+            modal.hidden = isOpen;
             this.setAttribute('aria-expanded', String(!isOpen));
             if (!isOpen) document.getElementById('searchInput').focus();
+        });
+
+        document.getElementById('search-close').addEventListener('click', function() {
+            document.getElementById('search-modal').hidden = true;
+            document.getElementById('search-toggle').setAttribute('aria-expanded', 'false');
+        });
+
+        document.getElementById('search-modal').addEventListener('click', function(event) {
+            if (event.target === this) document.getElementById('search-close').click();
         });
 
         document.getElementById('searchInput').addEventListener('keydown', function(event) {
