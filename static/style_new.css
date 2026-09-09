@@ -3681,8 +3681,8 @@ footer p {
     .mobile-menu-panel {
         position: absolute;
         top: 50%;
-        right: calc(100% + 0.5rem);
         left: auto;
+        right: calc(100% + 0.5rem);
         z-index: 2000;
         display: flex;
         flex-direction: row;
@@ -3704,8 +3704,8 @@ footer p {
     }
 
     .mobile-menu-wrap .mobile-menu-panel {
-        right: calc(100% + 0.5rem);
         left: auto;
+        right: calc(100% + 0.5rem);
         transform: translateY(-50%);
     }
 
