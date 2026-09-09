@@ -3598,30 +3598,98 @@ footer p {
     }
 
     .home-header {
-        padding: 0.55rem 0;
+        position: fixed;
+        top: 0.75rem;
+        right: 0.75rem;
+        z-index: 1100;
+        padding: 0;
+        background: transparent;
+    }
+
+    .home-header-stack {
+        width: auto;
+        min-width: 0;
+        padding: 0 !important;
     }
 
     .home-toolbar {
-        width: 100%;
-        min-width: 0;
-        padding: 0.45rem 0.6rem !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        width: 62px;
+        min-width: 62px;
+        padding: 0.55rem 0.45rem !important;
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(24, 119, 242, 0.98), rgba(22, 111, 229, 0.98));
+        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22);
     }
 
     .home-toolbar .profile-avatar-link {
-        width: 38px;
-        height: 38px;
-        flex-basis: 38px;
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+        margin: 0;
+    }
+
+    .home-toolbar-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.45rem;
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .home-toolbar .header-search,
+    .friends-link,
+    .notifications-link,
+    .logout-button,
+    .home-toolbar .search-toggle {
+        width: 40px;
+        height: 40px;
+        min-height: 40px;
+        flex: 0 0 40px;
+        display: grid;
+        place-items: center;
+        margin: 0;
+        padding: 0;
+        border-radius: 12px;
     }
 
     .home-toolbar .search-toggle {
-        width: 34px;
-        height: 34px;
-        font-size: 1.3rem;
+        font-size: 1.25rem;
+    }
+
+    .friends-link,
+    .notifications-link,
+    .logout-button {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.38);
+        color: white;
+        text-decoration: none;
+    }
+
+    .home-toolbar .notifications-link {
+        position: relative;
+        font-size: 1rem;
+    }
+
+    .home-toolbar .notifications-link span {
+        top: -4px;
+        right: -3px;
+    }
+
+    .home-toolbar-actions .logout-button {
+        display: grid;
+        place-items: center;
+        padding: 0;
+        font-size: 0.95rem;
     }
 
     .home-header-stack > .logout-button {
-        width: 34px;
-        min-height: 28px;
+        display: none;
     }
 
     .home-toolbar .header-search-panel {
