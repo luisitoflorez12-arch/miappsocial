@@ -160,9 +160,11 @@ header .logo img {
 }
 
 .home-header {
-    background: transparent;
-    box-shadow: none;
-    padding: 0.75rem 0;
+    position: static;
+    background: rgba(9, 16, 26, 0.9);
+    box-shadow: inset 0 -1px 0 rgba(143, 197, 255, 0.15);
+    padding: 0.6rem 0 0.45rem;
+    border-bottom: 1px solid rgba(143, 197, 255, 0.12);
 }
 
 .home-header-stack {
@@ -180,9 +182,11 @@ header .logo img {
     align-items: center;
     justify-content: space-between;
     width: min(100%, 560px);
-    padding: 0.55rem 0.75rem !important;
-    border-radius: 16px;
-    background: linear-gradient(180deg, #1877f2 0%, #166fe5 100%);
+    padding: 0.6rem 0.8rem !important;
+    border: 1px solid rgba(144, 190, 255, 0.22);
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(24, 119, 242, 0.96), rgba(19, 81, 176, 0.96));
+    box-shadow: 0 10px 24px rgba(8, 18, 36, 0.22);
 }
 
 .home-toolbar .header-search {
@@ -3598,11 +3602,13 @@ footer p {
     }
 
     .home-header {
-        position: sticky;
-        top: 0.35rem;
-        z-index: 1100;
-        padding: 0.15rem 0.5rem 0;
-        background: transparent;
+        position: static;
+        top: auto;
+        z-index: auto;
+        padding: 0.2rem 0.5rem 0.35rem;
+        background: rgba(9, 15, 24, 0.94);
+        border-bottom: 1px solid rgba(159, 200, 255, 0.14);
+        box-shadow: none;
     }
 
     .home-header-stack {
@@ -3619,9 +3625,10 @@ footer p {
         min-width: 0;
         min-height: 72px;
         padding: 0.7rem 0.8rem !important;
-        border-radius: 22px;
-        background: linear-gradient(180deg, rgba(24, 119, 242, 0.98), rgba(22, 111, 229, 0.98));
-        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.2);
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(24, 119, 242, 0.98), rgba(18, 90, 201, 0.98));
+        border: 1px solid rgba(190, 220, 255, 0.22);
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
     }
 
     .home-toolbar .profile-avatar-link {
@@ -3633,66 +3640,112 @@ footer p {
     }
 
     .home-toolbar-actions {
+        display: none;
+    }
+
+    .mobile-menu-wrap {
+        position: relative;
+        margin-left: auto;
+        z-index: 1200;
+    }
+
+    .mobile-menu-trigger {
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0.26rem;
+        width: 42px;
+        height: 42px;
+        border: 1px solid rgba(255, 255, 255, 0.82);
+        border-radius: 12px;
+        background: rgba(8, 14, 24, 0.18);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        cursor: pointer;
+    }
+
+    .mobile-menu-trigger span {
+        display: block;
+        width: 18px;
+        height: 2px;
+        border-radius: 2px;
+        background: white;
+    }
+
+    .mobile-menu-trigger[aria-expanded="true"] {
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .mobile-menu-panel {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        right: 0;
         display: flex;
         flex-direction: column;
-        align-items: flex-end;
-        justify-content: center;
-        gap: 0.38rem;
-        margin-left: auto;
+        width: min(220px, calc(100vw - 2rem));
+        padding: 0.45rem;
+        border: 1px solid rgba(169, 206, 255, 0.18);
+        border-radius: 16px;
+        background: rgba(10, 18, 29, 0.96);
+        box-shadow: 0 18px 32px rgba(0, 0, 0, 0.28);
     }
 
-    .home-toolbar .header-search,
-    .friends-link,
-    .notifications-link,
-    .logout-button,
-    .home-toolbar .search-toggle {
-        width: 36px;
-        height: 36px;
-        min-height: 36px;
-        flex: 0 0 36px;
-        display: grid;
-        place-items: center;
-        margin: 0;
-        padding: 0;
-        border-radius: 12px;
+    .mobile-menu-panel[hidden] {
+        display: none;
     }
 
-    .home-toolbar .search-toggle {
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        background: transparent;
-        color: white;
-        font-size: 1.3rem;
-    }
-
-    .friends-link,
-    .notifications-link,
-    .logout-button {
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.38);
+    .panel-action {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        width: 100%;
+        min-height: 44px;
+        padding: 0.7rem 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.03);
         color: white;
         text-decoration: none;
-        font-size: 1rem;
-    }
-
-    .home-toolbar .notifications-link {
-        position: relative;
-        font-size: 1rem;
-    }
-
-    .home-toolbar .notifications-link span {
-        top: -4px;
-        right: -3px;
-    }
-
-    .home-toolbar-actions .logout-button {
-        display: grid;
-        place-items: center;
-        padding: 0;
         font-size: 0.95rem;
+        font-weight: 600;
+        text-align: left;
+        transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
     }
 
-    .home-header-stack > .logout-button {
-        display: none;
+    .panel-action:hover,
+    .panel-action:focus-visible {
+        background: rgba(24, 119, 242, 0.12);
+        border-color: rgba(136, 190, 255, 0.35);
+        transform: translateY(-1px);
+    }
+
+    .panel-action + .panel-action {
+        margin-top: 0.45rem;
+    }
+
+    .panel-action span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.2rem;
+        height: 1.2rem;
+        border-radius: 999px;
+        background: #1877f2;
+        color: white;
+        font-size: 0.68rem;
+        line-height: 1;
+        padding: 0.15rem 0.35rem;
+    }
+
+    .search-panel-trigger {
+        background: rgba(24, 119, 242, 0.18);
+        color: white;
+        border-color: rgba(24, 119, 242, 0.5);
+    }
+
+    .logout-panel-button {
+        background: rgba(255, 255, 255, 0.04);
     }
 
     .home-toolbar .header-search-panel {
