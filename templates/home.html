@@ -46,15 +46,24 @@
                     </button>
 
                     <div class="mobile-menu-panel" id="mobile-menu-panel" hidden>
-                        <button type="button" class="panel-action search-panel-trigger" id="mobile-search-toggle" aria-label="Buscar" title="Buscar">
-                            ⌕
-                        </button>
-                        <a class="panel-action" href="{{ url_for('notificaciones', user_id=user_id) }}" aria-label="Notificaciones" title="Notificaciones">
-                            🔔{% if notification_count %}<span>{{ notification_count }}</span>{% endif %}
-                        </a>
-                        <a class="panel-action" href="{{ url_for('amigos', user_id=user_id) }}" aria-label="Amigos" title="Amigos">
-                            👥
-                        </a>
+                        <div class="mobile-menu-card" role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title">
+                            <div class="mobile-menu-header">
+                                <h2 id="mobile-menu-title">Menú</h2>
+                                <button type="button" class="search-close" id="mobile-menu-close" aria-label="Cerrar menú">×</button>
+                            </div>
+                            <div class="mobile-menu-actions">
+                                <button type="button" class="panel-action search-panel-trigger" id="mobile-search-toggle" aria-label="Buscar" title="Buscar">
+                                    <span class="panel-action-text">⌕ Buscar</span>
+                                </button>
+                                <a class="panel-action" href="{{ url_for('notificaciones', user_id=user_id) }}" aria-label="Notificaciones" title="Notificaciones">
+                                    <span class="panel-action-text">🔔 Notificaciones</span>
+                                    {% if notification_count %}<span class="panel-badge">{{ notification_count }}</span>{% endif %}
+                                </a>
+                                <a class="panel-action" href="{{ url_for('amigos', user_id=user_id) }}" aria-label="Amigos" title="Amigos">
+                                    <span class="panel-action-text">👥 Amigos</span>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -396,12 +405,16 @@
 
         const mobileMenuTrigger = document.getElementById('mobile-menu-trigger');
         const mobileMenuPanel = document.getElementById('mobile-menu-panel');
+        const mobileMenuClose = document.getElementById('mobile-menu-close');
         const mobileSearchToggle = document.getElementById('mobile-search-toggle');
 
         function toggleMobileMenu() {
+            if (!mobileMenuPanel) return;
             const isOpen = !mobileMenuPanel.hidden;
             mobileMenuPanel.hidden = isOpen;
-            mobileMenuTrigger.setAttribute('aria-expanded', String(!isOpen));
+            if (mobileMenuTrigger) {
+                mobileMenuTrigger.setAttribute('aria-expanded', String(!isOpen));
+            }
         }
 
         if (mobileMenuTrigger && mobileMenuPanel) {
@@ -409,11 +422,18 @@
                 toggleMobileMenu();
             });
 
-            document.addEventListener('click', function(event) {
-                if (!mobileMenuPanel.hidden && !mobileMenuPanel.contains(event.target) && !mobileMenuTrigger.contains(event.target)) {
+            mobileMenuPanel.addEventListener('click', function(event) {
+                if (event.target === mobileMenuPanel) {
                     mobileMenuPanel.hidden = true;
                     mobileMenuTrigger.setAttribute('aria-expanded', 'false');
                 }
+            });
+        }
+
+        if (mobileMenuClose && mobileMenuPanel) {
+            mobileMenuClose.addEventListener('click', function() {
+                mobileMenuPanel.hidden = true;
+                mobileMenuTrigger.setAttribute('aria-expanded', 'false');
             });
         }
 
@@ -426,7 +446,7 @@
                 }
                 if (mobileMenuPanel) {
                     mobileMenuPanel.hidden = true;
-                    mobileMenuTrigger.setAttribute('aria-expanded', 'false');
+                    if (mobileMenuTrigger) mobileMenuTrigger.setAttribute('aria-expanded', 'false');
                 }
             });
         }
