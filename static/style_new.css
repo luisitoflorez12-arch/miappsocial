@@ -3598,48 +3598,47 @@ footer p {
     }
 
     .home-header {
-        position: fixed;
-        top: 0.75rem;
-        right: 0.75rem;
+        position: sticky;
+        top: 0.35rem;
         z-index: 1100;
-        padding: 0;
+        padding: 0.15rem 0.5rem 0;
         background: transparent;
     }
 
     .home-header-stack {
-        width: auto;
-        min-width: 0;
+        width: 100%;
         padding: 0 !important;
+        align-items: stretch;
     }
 
     .home-toolbar {
         display: flex;
-        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: 0.45rem;
-        width: 62px;
-        min-width: 62px;
-        padding: 0.55rem 0.45rem !important;
-        border-radius: 18px;
+        justify-content: space-between;
+        width: 100%;
+        min-width: 0;
+        min-height: 72px;
+        padding: 0.7rem 0.8rem !important;
+        border-radius: 22px;
         background: linear-gradient(180deg, rgba(24, 119, 242, 0.98), rgba(22, 111, 229, 0.98));
-        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22);
+        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.2);
     }
 
     .home-toolbar .profile-avatar-link {
-        width: 40px;
-        height: 40px;
-        flex-basis: 40px;
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
         margin: 0;
+        border-width: 2px;
     }
 
     .home-toolbar-actions {
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 0.45rem;
-        width: 100%;
-        margin-left: 0;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 0.38rem;
+        margin-left: auto;
     }
 
     .home-toolbar .header-search,
@@ -3647,10 +3646,10 @@ footer p {
     .notifications-link,
     .logout-button,
     .home-toolbar .search-toggle {
-        width: 40px;
-        height: 40px;
-        min-height: 40px;
-        flex: 0 0 40px;
+        width: 36px;
+        height: 36px;
+        min-height: 36px;
+        flex: 0 0 36px;
         display: grid;
         place-items: center;
         margin: 0;
@@ -3659,7 +3658,10 @@ footer p {
     }
 
     .home-toolbar .search-toggle {
-        font-size: 1.25rem;
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        background: transparent;
+        color: white;
+        font-size: 1.3rem;
     }
 
     .friends-link,
@@ -3669,6 +3671,7 @@ footer p {
         border: 1px solid rgba(255, 255, 255, 0.38);
         color: white;
         text-decoration: none;
+        font-size: 1rem;
     }
 
     .home-toolbar .notifications-link {
