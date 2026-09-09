@@ -3688,12 +3688,21 @@ footer p {
         align-items: center;
         gap: 0.35rem;
         width: auto;
-        padding: 0.3rem;
+        padding: 0.35rem;
         border: 1px solid rgba(169, 206, 255, 0.18);
-        border-radius: 14px;
+        border-radius: 16px;
         background: rgba(10, 18, 29, 0.96);
         box-shadow: 0 18px 32px rgba(0, 0, 0, 0.28);
         transform: translate(-100%, -50%);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.22s ease, opacity 0.22s ease;
+    }
+
+    .mobile-menu-panel:not([hidden]) {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate(0, -50%);
     }
 
     .mobile-menu-wrap {
@@ -3707,11 +3716,16 @@ footer p {
         transform: translate(-100%, -50%);
     }
 
+    .mobile-menu-wrap .mobile-menu-panel:not([hidden]) {
+        transform: translate(0, -50%);
+    }
+
     .mobile-menu-panel[hidden] {
         display: none;
     }
 
     .panel-action {
+        position: relative;
         display: grid;
         place-items: center;
         width: 38px;
