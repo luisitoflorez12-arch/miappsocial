@@ -46,14 +46,15 @@
                     </button>
 
                     <div class="mobile-menu-panel" id="mobile-menu-panel" hidden>
-                        <button type="button" class="panel-action search-panel-trigger" id="mobile-search-toggle">
-                            ⌕ Buscar
+                        <button type="button" class="panel-action search-panel-trigger" id="mobile-search-toggle" aria-label="Buscar" title="Buscar">
+                            ⌕
                         </button>
-                        <a class="panel-action" href="{{ url_for('amigos', user_id=user_id) }}">👥 Amigos</a>
-                        <a class="panel-action" href="{{ url_for('notificaciones', user_id=user_id) }}">
-                            🔔 Notificaciones{% if notification_count %}<span>{{ notification_count }}</span>{% endif %}
+                        <a class="panel-action" href="{{ url_for('notificaciones', user_id=user_id) }}" aria-label="Notificaciones" title="Notificaciones">
+                            🔔{% if notification_count %}<span>{{ notification_count }}</span>{% endif %}
                         </a>
-                        <a href="/logout" class="panel-action logout-panel-button" onclick="return window.confirm('¿Seguro que quieres cerrar sesión?');">🚪 Cerrar sesión</a>
+                        <a class="panel-action" href="{{ url_for('amigos', user_id=user_id) }}" aria-label="Amigos" title="Amigos">
+                            👥
+                        </a>
                     </div>
                 </div>
             </div>
