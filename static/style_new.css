@@ -2292,14 +2292,15 @@ header { background: #0d1b2a; }
         bottom: 0;
         padding: 0.65rem;
         z-index: 20;
-        transition: transform 0.25s ease;
-        transform: translateY(18vh);
+        transition: none;
+        transform: none;
         border-top: 1px solid rgba(255,255,255,0.08);
         background: #151d28;
     }
     .chat-page.is-typing .chat-input-area,
     .chat-page.keyboard-open .chat-input-area {
-        transform: translateY(-74px);
+        transform: none;
+        bottom: 0;
     }
     .chat-form .input-group { gap: 0.4rem; }
     .chat-form .input-group .btn { min-width: 74px; padding: 0.65rem 0.5rem; }
