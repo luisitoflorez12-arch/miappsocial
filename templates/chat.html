@@ -183,21 +183,15 @@
                 return;
             }
 
-            const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-            const keyboardGap = Math.max(0, window.innerHeight - viewportHeight - 24);
-            const shouldLift = keyboardGap > 80 && document.activeElement === chatInputField;
-
-            chatPage.classList.toggle('keyboard-open', shouldLift);
-            chatInputArea.style.bottom = shouldLift ? `${Math.min(keyboardGap, 120)}px` : '0px';
-
-            if (shouldLift) {
-                const area = document.getElementById('mensajesArea');
-                if (area) {
-                    setTimeout(() => {
-                        area.scrollTop = area.scrollHeight;
-                    }, 120);
-                }
+            const area = document.getElementById('mensajesArea');
+            if (area) {
+                setTimeout(() => {
+                    area.scrollTop = area.scrollHeight;
+                }, 120);
             }
+
+            chatPage.classList.remove('keyboard-open');
+            chatInputArea.style.bottom = '0px';
         }
 
         if (window.visualViewport) {
