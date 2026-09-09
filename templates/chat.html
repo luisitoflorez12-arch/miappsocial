@@ -178,22 +178,25 @@
         }
 
         function updateComposerPosition() {
-            if (!chatInputArea || !chatPage || window.innerWidth > 600) return;
+            if (!chatInputArea || !chatPage || window.innerWidth > 600) {
+                chatPage?.classList.remove('keyboard-open');
+                return;
+            }
 
             const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-            const keyboardGap = Math.max(0, window.innerHeight - viewportHeight - 18);
-            const shouldLift = keyboardGap > 70 && document.activeElement === chatInputField;
+            const keyboardGap = Math.max(0, window.innerHeight - viewportHeight - 24);
+            const shouldLift = keyboardGap > 80 && document.activeElement === chatInputField;
 
             chatPage.classList.toggle('keyboard-open', shouldLift);
+            chatInputArea.style.bottom = shouldLift ? `${Math.min(keyboardGap, 120)}px` : '0px';
 
             if (shouldLift) {
-                chatInputArea.style.transform = `translateY(-${Math.min(keyboardGap, 110)}px)`;
-                setTimeout(() => {
-                    chatInputArea.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                }, 120);
-            } else {
-                chatInputArea.style.transform = 'translateY(18vh)';
-                chatPage.classList.remove('keyboard-open');
+                const area = document.getElementById('mensajesArea');
+                if (area) {
+                    setTimeout(() => {
+                        area.scrollTop = area.scrollHeight;
+                    }, 120);
+                }
             }
         }
 
@@ -205,10 +208,7 @@
         chatInputField?.addEventListener('focus', () => {
             chatPage?.classList.add('is-typing');
             setTimeout(() => {
-                if (window.innerWidth <= 600) {
-                    updateComposerPosition();
-                    chatInputArea?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                }
+                if (window.innerWidth <= 600) updateComposerPosition();
             }, 120);
         });
 
@@ -216,13 +216,9 @@
             chatPage?.classList.remove('is-typing');
             chatPage?.classList.remove('keyboard-open');
             if (window.innerWidth <= 600) {
-                chatInputArea.style.transform = 'translateY(18vh)';
+                chatInputArea.style.bottom = '0px';
             }
         });
-
-        if (window.innerWidth <= 600) {
-            chatInputArea.style.transform = 'translateY(18vh)';
-        }
 
         // Scroll automático al último mensaje
         setTimeout(function() {
