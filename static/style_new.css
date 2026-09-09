@@ -2150,11 +2150,45 @@ header { background: #0d1b2a; }
     .messages-heading-actions { width: 100%; justify-content: space-between; }
     .group-create-page { padding: 2rem 0.9rem; }
     .group-form { padding: 1rem; }
-    .chat-page { padding: 0; }
-    .chat-page-container { padding: 0; }
-    .chat-container { min-height: 100dvh; border-radius: 0; border-left: 0; border-right: 0; }
-    .chat-header { min-height: 64px; padding: 0.75rem; position: sticky; top: 0; z-index: 4; }
-    .chat-messages { height: calc(100dvh - 138px); min-height: 0; padding: 0.9rem 0.7rem; }
+    .chat-page {
+        width: 100vw;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        background: #0b1017;
+    }
+    .chat-page-container,
+    .chat-page .container {
+        width: 100vw;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
+    .chat-container {
+        width: 100vw;
+        max-width: none;
+        min-height: 100dvh;
+        border-radius: 0;
+        border-left: 0;
+        border-right: 0;
+        border-top: 0;
+        border-bottom: 0;
+        margin: 0;
+    }
+    .chat-header {
+        min-height: 64px;
+        padding: 0.75rem;
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        border-radius: 0;
+        background: linear-gradient(135deg, #0f4ca8 0%, #1a5ec7 100%);
+    }
+    .chat-messages {
+        height: calc(100dvh - 138px);
+        min-height: 0;
+        padding: 0.9rem 0.7rem;
+    }
     .chat-input-area {
         position: sticky;
         bottom: 0;
@@ -2162,6 +2196,8 @@ header { background: #0d1b2a; }
         z-index: 20;
         transition: transform 0.25s ease;
         transform: translateY(18vh);
+        border-top: 1px solid rgba(255,255,255,0.08);
+        background: #151d28;
     }
     .chat-page.is-typing .chat-input-area,
     .chat-page.keyboard-open .chat-input-area {
