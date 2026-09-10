@@ -582,7 +582,7 @@ main.container {
 .action-menu {
     display: none;
     position: absolute;
-    z-index: 20;
+    z-index: 200;
     min-width: 180px;
     padding: 0.35rem;
     background: #202936;
@@ -628,8 +628,10 @@ main.container {
 }
 
 .message-menu {
-    right: 0;
-    bottom: -2.3rem;
+    top: 0.8rem;
+    right: 0.35rem;
+    bottom: auto;
+    z-index: 300;
 }
 
 .remove-selected-file {
