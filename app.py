@@ -350,8 +350,8 @@ def registro():
             return redirect(url_for("registro"))
 
         # Guardar usuario con contraseña encriptada
-        hash = generate_password_hash(password)
-        nuevo = Usuario(telefono=telefono, telefono_publico=False, usuario=usuario, password=hash)
+        password_hash = generate_password_hash(password)
+        nuevo = Usuario(telefono=telefono, telefono_publico=False, usuario=usuario, password=password_hash)
         db.session.add(nuevo)
         try:
             db.session.commit()
@@ -565,6 +565,10 @@ def seguir(target_id, current_user_id):
     if session.get('user_id') != current_user_id:
         flash("Inicia sesión para seguir usuarios.", "danger")
         return redirect(url_for("login"))
+    target = Usuario.query.get(target_id)
+    if not target:
+        flash("Usuario no encontrado.", "danger")
+        return redirect(url_for("home", user_id=current_user_id))
     if target_id != current_user_id:
         existing = Seguidor.query.filter_by(
             seguidor_id=current_user_id, seguido_id=target_id
@@ -621,6 +625,9 @@ def bloquear(target_id, current_user_id):
     if session.get('user_id') != current_user_id:
         flash("Inicia sesión para bloquear usuarios.", "danger")
         return redirect(url_for("login"))
+    if not Usuario.query.get(target_id):
+        flash("Usuario no encontrado.", "danger")
+        return redirect(url_for("home", user_id=current_user_id))
     if target_id != current_user_id:
         existing = Bloqueo.query.filter_by(
             bloqueador_id=current_user_id, bloqueado_id=target_id
@@ -709,6 +716,11 @@ def admin_eliminar():
     if message_ids:
         Mensaje.query.filter(Mensaje.id.in_(message_ids)).delete(synchronize_session=False)
     if user_ids:
+        SolicitudAmistad.query.filter(
+            (SolicitudAmistad.emisor_id.in_(user_ids)) |
+            (SolicitudAmistad.receptor_id.in_(user_ids))
+        ).delete(synchronize_session=False)
+        GrupoMiembro.query.filter(GrupoMiembro.usuario_id.in_(user_ids)).delete(synchronize_session=False)
         Usuario.query.filter(Usuario.id.in_(user_ids)).delete(synchronize_session=False)
 
     db.session.commit()
@@ -1015,23 +1027,27 @@ def notificaciones(user_id):
 
 @app.route("/buscar/<int:user_id>")
 def buscar(user_id):
+    if session.get('user_id') != user_id:
+        return jsonify({"error": "No autorizado"}), 401
+
     query = request.args.get("q", "").strip()
     if len(query) < 2:
         return jsonify([])
 
     usuarios = Usuario.query.filter(
+        Usuario.id != user_id,
         (Usuario.usuario.ilike(f"%{query}%")) |
         (Usuario.nombre.ilike(f"%{query}%"))
-    ).limit(10).all()
+    ).order_by(Usuario.usuario.asc()).limit(10).all()
 
     return jsonify([
         {
             "id": usuario.id,
             "usuario": usuario.usuario,
             "nombre": usuario.nombre or "",
+            "foto": usuario.foto_data or usuario.foto or "",
         }
         for usuario in usuarios
-        if usuario.id != user_id
     ])
 
 if __name__ == "__main__":

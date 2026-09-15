@@ -35,7 +35,7 @@
                     </div>
                     <a class="friends-link" href="{{ url_for('amigos', user_id=user_id) }}" aria-label="Abrir amigos y solicitudes" title="Amigos y solicitudes">👥</a>
                     <a class="notifications-link" href="{{ url_for('notificaciones', user_id=user_id) }}" aria-label="Abrir notificaciones" title="Notificaciones">🔔{% if notification_count %}<span>{{ notification_count }}</span>{% endif %}</a>
-                    <a href="/logout" class="logout-button" aria-label="Cerrar sesión" title="Cerrar sesión" onclick="return window.confirm('¿Seguro que quieres cerrar sesión?');"><span aria-hidden="true">🚪</span></a>
+                    <a href="{{ url_for('logout') }}" class="logout-button" aria-label="Cerrar sesión" title="Cerrar sesión" onclick="return window.confirm('¿Seguro que quieres cerrar sesión?');"><span aria-hidden="true">🚪</span></a>
                 </div>
 
             </div>
@@ -48,10 +48,10 @@
                 <h2 id="search-title">Buscar personas</h2>
                 <button type="button" class="search-close" id="search-close" aria-label="Cerrar búsqueda">×</button>
             </div>
-            <div class="search-form-row">
+            <form class="search-form-row" id="search-form">
                 <input type="search" id="searchInput" class="form-control" placeholder="Buscar por usuario o nombre..." autocomplete="off" aria-label="Buscar perfiles">
-                <button type="button" class="btn btn-primary search-submit" onclick="buscarUsuarios()">Buscar</button>
-            </div>
+                <button type="submit" class="btn btn-primary search-submit">Buscar</button>
+            </form>
             <div id="searchResults" class="search-results"></div>
         </div>
     </div>
@@ -84,7 +84,7 @@
                 <div class="composer-modal" id="composer-modal" hidden>
                     <div class="composer-panel" role="dialog" aria-modal="true" aria-labelledby="composer-title">
                         <div class="composer-panel-header"><h2 id="composer-title">Crear publicación</h2><button type="button" class="composer-close" onclick="closeComposer()" aria-label="Cerrar">×</button></div>
-                        <form action="/add/{{ user_id }}" method="post" enctype="multipart/form-data" class="composer-editor">
+                        <form action="{{ url_for('add_post', user_id=user_id) }}" method="post" enctype="multipart/form-data" class="composer-editor">
                             <textarea name="comentario" id="composer-text" class="composer-input" placeholder="¿Qué estás pensando, {{ usuario.usuario }}?" rows="5" aria-label="Texto de la publicación"></textarea>
                             <div class="composer-editor-tools">
                                 <label for="imagen" class="composer-tool composer-image-tool" title="Agregar imagen" aria-label="Agregar imagen">📷</label>
@@ -354,16 +354,24 @@
         }
 
         function buscarUsuarios() {
-            const query = document.getElementById('searchInput').value.trim();
+            const input = document.getElementById('searchInput');
             const resultsDiv = document.getElementById('searchResults');
+            if (!input || !resultsDiv) return;
+            const query = input.value.trim();
 
             if (query.length < 2) {
                 resultsDiv.innerHTML = query ? '<p class="no-results">Escribe al menos 2 caracteres</p>' : '';
                 return;
             }
 
-            fetch(`/buscar/{{ user_id }}?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
+            resultsDiv.innerHTML = '<p class="no-results">Buscando...</p>';
+            fetch(`/buscar/{{ user_id }}?q=${encodeURIComponent(query)}`, {
+                headers: { 'Accept': 'application/json' }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('search_failed');
+                    return response.json();
+                })
                 .then(users => {
                     if (!users.length) {
                         resultsDiv.innerHTML = '<p class="no-results">No se encontraron usuarios</p>';
@@ -372,10 +380,10 @@
 
                     resultsDiv.innerHTML = users.map(user => `
                         <a class="user-card" href="/perfil/${user.id}/{{ user_id }}">
-                            <span class="user-avatar">${(user.usuario || 'U').replace('@', '').charAt(0).toUpperCase()}</span>
+                            ${user.foto ? `<img class="user-avatar" src="${escapeHtml(user.foto)}" alt="">` : `<span class="user-avatar">${escapeHtml((user.usuario || 'U').replace('@', '').charAt(0).toUpperCase())}</span>`}
                             <span class="user-info">
-                                <strong class="username">${user.usuario}</strong>
-                                <span class="userphone">${user.nombre || 'Ver perfil'}</span>
+                                <strong class="username">${escapeHtml(user.usuario)}</strong>
+                                <span class="userphone">${escapeHtml(user.nombre || 'Ver perfil')}</span>
                             </span>
                         </a>
                     `).join('');
@@ -385,10 +393,17 @@
                 });
         }
 
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>'"]/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[character]));
+        }
+
         const searchToggle = document.getElementById('search-toggle');
         const searchModal = document.getElementById('search-modal');
         const searchClose = document.getElementById('search-close');
         const searchInput = document.getElementById('searchInput');
+        const searchForm = document.getElementById('search-form');
 
         if (searchToggle) {
             searchToggle.addEventListener('click', function() {
@@ -414,10 +429,23 @@
         }
 
         if (searchInput) {
+            let searchTimer;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(buscarUsuarios, 250);
+            });
             searchInput.addEventListener('keydown', function(event) {
                 if (event.key === 'Enter') {
+                    event.preventDefault();
                     buscarUsuarios();
                 }
+            });
+        }
+
+        if (searchForm) {
+            searchForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                buscarUsuarios();
             });
         }
     </script>

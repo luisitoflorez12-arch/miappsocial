@@ -2471,6 +2471,18 @@ textarea.form-control:focus {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.42);
 }
 
+.search-panel {
+    overflow: hidden;
+}
+
+.search-panel .search-results {
+    position: static;
+    width: auto;
+    max-height: min(42vh, 300px);
+    margin: 0 1.2rem 1.1rem;
+    background: #202d3e;
+}
+
 .composer-panel-header,
 .search-panel-header {
     display: flex;
@@ -3255,6 +3267,14 @@ footer p {
     transition: all 0.3s ease;
     cursor: pointer;
     text-decoration: none;
+}
+
+.search-panel .user-card {
+    background: #151b24;
+}
+
+.search-panel .user-card:hover {
+    background: #293b52;
 }
 
 .user-card:hover {

@@ -36,7 +36,7 @@
                 {% endif %}
             {% endwith %}
 
-            <form method="POST" action="/login" class="form">
+            <form method="POST" action="{{ url_for('login') }}" class="form">
                 <div class="form-group">
                     <label class="form-label" for="usuario">Nombre de usuario:</label>
                     <input type="text" id="usuario" name="usuario" class="form-control" placeholder="Ejemplo: juan" required autofocus>
