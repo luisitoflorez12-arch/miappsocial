@@ -38,34 +38,6 @@
                     <a href="/logout" class="logout-button" aria-label="Cerrar sesión" title="Cerrar sesión" onclick="return window.confirm('¿Seguro que quieres cerrar sesión?');"><span aria-hidden="true">🚪</span></a>
                 </div>
 
-                <div class="mobile-menu-wrap">
-                    <button type="button" class="mobile-menu-trigger" id="mobile-menu-trigger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-menu-panel">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </button>
-
-                    <div class="mobile-menu-panel" id="mobile-menu-panel" hidden>
-                        <div class="mobile-menu-card" role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title">
-                            <div class="mobile-menu-header">
-                                <h2 id="mobile-menu-title">Menú</h2>
-                                <button type="button" class="search-close" id="mobile-menu-close" aria-label="Cerrar menú">×</button>
-                            </div>
-                            <div class="mobile-menu-actions">
-                                <button type="button" class="panel-action search-panel-trigger" id="mobile-search-toggle" aria-label="Buscar" title="Buscar">
-                                    <span class="panel-action-text">⌕ Buscar</span>
-                                </button>
-                                <a class="panel-action" href="{{ url_for('notificaciones', user_id=user_id) }}" aria-label="Notificaciones" title="Notificaciones">
-                                    <span class="panel-action-text">🔔 Notificaciones</span>
-                                    {% if notification_count %}<span class="panel-badge">{{ notification_count }}</span>{% endif %}
-                                </a>
-                                <a class="panel-action" href="{{ url_for('amigos', user_id=user_id) }}" aria-label="Amigos" title="Amigos">
-                                    <span class="panel-action-text">👥 Amigos</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </header>
@@ -268,24 +240,34 @@
         }
 
         function openComposer() {
-            document.getElementById('composer-modal').hidden = false;
-            document.getElementById('composer-text').focus();
+            const modal = document.getElementById('composer-modal');
+            const composerText = document.getElementById('composer-text');
+            if (!modal || !composerText) return;
+            modal.hidden = false;
+            composerText.focus();
         }
 
         function closeComposer() {
-            document.getElementById('composer-modal').hidden = true;
+            const modal = document.getElementById('composer-modal');
+            if (modal) modal.hidden = true;
         }
 
-        document.querySelector('.composer-launcher').addEventListener('keydown', function(event) {
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                openComposer();
-            }
-        });
+        const composerLauncher = document.querySelector('.composer-launcher');
+        if (composerLauncher) {
+            composerLauncher.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openComposer();
+                }
+            });
+        }
 
-        document.getElementById('composer-modal').addEventListener('click', function(event) {
-            if (event.target === this) closeComposer();
-        });
+        const composerModal = document.getElementById('composer-modal');
+        if (composerModal) {
+            composerModal.addEventListener('click', function(event) {
+                if (event.target === this) closeComposer();
+            });
+        }
 
         // Preview de imagen
         document.getElementById('imagen').addEventListener('change', function(e) {
@@ -403,76 +385,41 @@
                 });
         }
 
-        const mobileMenuTrigger = document.getElementById('mobile-menu-trigger');
-        const mobileMenuPanel = document.getElementById('mobile-menu-panel');
-        const mobileMenuClose = document.getElementById('mobile-menu-close');
-        const mobileSearchToggle = document.getElementById('mobile-search-toggle');
+        const searchToggle = document.getElementById('search-toggle');
+        const searchModal = document.getElementById('search-modal');
+        const searchClose = document.getElementById('search-close');
+        const searchInput = document.getElementById('searchInput');
 
-        function toggleMobileMenu() {
-            if (!mobileMenuPanel) return;
-            const isOpen = !mobileMenuPanel.hidden;
-            mobileMenuPanel.hidden = isOpen;
-            if (mobileMenuTrigger) {
-                mobileMenuTrigger.setAttribute('aria-expanded', String(!isOpen));
-            }
+        if (searchToggle) {
+            searchToggle.addEventListener('click', function() {
+                if (!searchModal) return;
+                const isOpen = !searchModal.hidden;
+                searchModal.hidden = isOpen;
+                this.setAttribute('aria-expanded', String(!isOpen));
+                if (!isOpen && searchInput) searchInput.focus();
+            });
         }
 
-        if (mobileMenuTrigger && mobileMenuPanel) {
-            mobileMenuTrigger.addEventListener('click', function() {
-                toggleMobileMenu();
+        if (searchClose && searchModal) {
+            searchClose.addEventListener('click', function() {
+                searchModal.hidden = true;
+                if (searchToggle) searchToggle.setAttribute('aria-expanded', 'false');
             });
+        }
 
-            mobileMenuPanel.addEventListener('click', function(event) {
-                if (event.target === mobileMenuPanel) {
-                    mobileMenuPanel.hidden = true;
-                    mobileMenuTrigger.setAttribute('aria-expanded', 'false');
+        if (searchModal) {
+            searchModal.addEventListener('click', function(event) {
+                if (event.target === this && searchClose) searchClose.click();
+            });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    buscarUsuarios();
                 }
             });
         }
-
-        if (mobileMenuClose && mobileMenuPanel) {
-            mobileMenuClose.addEventListener('click', function() {
-                mobileMenuPanel.hidden = true;
-                mobileMenuTrigger.setAttribute('aria-expanded', 'false');
-            });
-        }
-
-        if (mobileSearchToggle) {
-            mobileSearchToggle.addEventListener('click', function() {
-                const modal = document.getElementById('search-modal');
-                if (modal) {
-                    modal.hidden = false;
-                    if (document.getElementById('searchInput')) document.getElementById('searchInput').focus();
-                }
-                if (mobileMenuPanel) {
-                    mobileMenuPanel.hidden = true;
-                    if (mobileMenuTrigger) mobileMenuTrigger.setAttribute('aria-expanded', 'false');
-                }
-            });
-        }
-
-        document.getElementById('search-toggle').addEventListener('click', function() {
-            const modal = document.getElementById('search-modal');
-            const isOpen = !modal.hidden;
-            modal.hidden = isOpen;
-            this.setAttribute('aria-expanded', String(!isOpen));
-            if (!isOpen) document.getElementById('searchInput').focus();
-        });
-
-        document.getElementById('search-close').addEventListener('click', function() {
-            document.getElementById('search-modal').hidden = true;
-            document.getElementById('search-toggle').setAttribute('aria-expanded', 'false');
-        });
-
-        document.getElementById('search-modal').addEventListener('click', function(event) {
-            if (event.target === this) document.getElementById('search-close').click();
-        });
-
-        document.getElementById('searchInput').addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                buscarUsuarios();
-            }
-        });
     </script>
 </body>
 </html>
